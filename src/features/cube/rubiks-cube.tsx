@@ -1,12 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { useSpring, animated } from '@react-spring/three';
+import * as THREE from 'three';
 import type { FaceName, FaceColor, CubeState } from '@/shared/types/cube';
-import { COLOR_TO_HEX } from '@/shared/types/cube';
+import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
 
 const CUBIE_SIZE = 0.93;
 const GAP = 0.06;
+const ANGLE_MAP: Record<number, number> = {
+  1: Math.PI / 2,
+  '-1': -Math.PI / 2,
+  2: Math.PI,
+};
 
 interface StickerProps {
   color: FaceColor;
@@ -26,10 +33,39 @@ const Sticker: React.FC<StickerProps> = ({ color, position, rotation }) => {
 interface CubieProps {
   position: [number, number, number];
   faces: Partial<Record<FaceName, FaceColor>>;
-  highlighted?: boolean;
+  animating?: boolean;
+  animationAxis?: [number, number, number];
+  animationAngle?: number;
 }
 
-const Cubie: React.FC<CubieProps> = ({ position, faces, highlighted }) => {
+const Cubie: React.FC<CubieProps> = ({ position, faces, animating, animationAxis, animationAngle }) => {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const targetRotation = animating && animationAxis && animationAngle
+    ? (() => {
+        const axis = animationAxis;
+        const angle = animationAngle;
+        const ax = axis[0], ay = axis[1], az = axis[2];
+        const s = Math.sin(angle / 2);
+        const qx = ax * s, qy = ay * s, qz = az * s;
+        const qw = Math.cos(angle / 2);
+        const sinr_cosp = 2 * (qw * qx - qy * qz);
+        const cosr_cosp = 1 - 2 * (qx * qx + qz * qz);
+        const x = Math.atan2(sinr_cosp, cosr_cosp);
+        const sinp = 2 * (qw * qy + qz * qx);
+        const y = Math.abs(sinp) >= 1 ? Math.sign(sinp) * Math.PI / 2 : Math.asin(sinp);
+        const siny_cosp = 2 * (qw * qz + qx * qy);
+        const cosy_cosp = 1 - 2 * (qx * qx + qy * qy);
+        const z = Math.atan2(siny_cosp, cosy_cosp);
+        return [x, y, z] as [number, number, number];
+      })()
+    : [0, 0, 0] as [number, number, number];
+
+  const springs = useSpring({
+    rotation: targetRotation,
+    config: { duration: 300 },
+  });
+
   const stickerData = useMemo(() => {
     const stickers: StickerProps[] = [];
     const half = CUBIE_SIZE / 2 + 0.001;
@@ -45,11 +81,11 @@ const Cubie: React.FC<CubieProps> = ({ position, faces, highlighted }) => {
   }, [faces]);
 
   return (
-    <group position={position}>
+    <animated.group ref={groupRef} position={position} rotation={springs.rotation as unknown as [number, number, number]}>
       <mesh>
         <boxGeometry args={[CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE]} />
         <meshStandardMaterial
-          color={highlighted ? '#333333' : '#1a1a1a'}
+          color="#1a1a1a"
           roughness={0.3}
           metalness={0.1}
         />
@@ -57,7 +93,7 @@ const Cubie: React.FC<CubieProps> = ({ position, faces, highlighted }) => {
       {stickerData.map((sticker, i) => (
         <Sticker key={i} {...sticker} />
       ))}
-    </group>
+    </animated.group>
   );
 };
 
@@ -74,15 +110,44 @@ function getCubieFaces(state: CubeState, x: number, y: number, z: number): Parti
   return faces;
 }
 
-interface RubiksCubeProps {
-  highlightedPositions?: Set<string>;
+function isCubieOnFace(x: number, y: number, z: number, face: FaceName): boolean {
+  switch (face) {
+    case 'U': return y === 1;
+    case 'D': return y === -1;
+    case 'F': return z === 1;
+    case 'B': return z === -1;
+    case 'L': return x === -1;
+    case 'R': return x === 1;
+  }
 }
 
-export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlightedPositions }) => {
+const AnimatedCubies: React.FC = () => {
   const state = useCubeStore((s) => s.state);
+  const currentAnimation = useCubeStore((s) => s.currentAnimation);
+  const isAnimating = useCubeStore((s) => s.isAnimating);
+  const onAnimationComplete = useCubeStore((s) => s.onAnimationComplete);
+  const moveSpeed = useCubeStore((s) => s.moveSpeed);
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isAnimating && currentAnimation) {
+      const duration = 300 / moveSpeed;
+      timerRef.current = setTimeout(() => {
+        onAnimationComplete();
+      }, duration);
+    }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isAnimating, currentAnimation, moveSpeed, onAnimationComplete]);
 
   const cubies = useMemo(() => {
-    const result: { position: [number, number, number]; faces: Partial<Record<FaceName, FaceColor>> }[] = [];
+    const result: {
+      position: [number, number, number];
+      coords: [number, number, number];
+      faces: Partial<Record<FaceName, FaceColor>>;
+    }[] = [];
 
     for (let x = -1; x <= 1; x++) {
       for (let y = -1; y <= 1; y++) {
@@ -90,6 +155,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlightedPositions }) 
           if (x === 0 && y === 0 && z === 0) continue;
           result.push({
             position: [x * (CUBIE_SIZE + GAP), y * (CUBIE_SIZE + GAP), z * (CUBIE_SIZE + GAP)],
+            coords: [x, y, z],
             faces: getCubieFaces(state, x, y, z),
           });
         }
@@ -99,6 +165,28 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlightedPositions }) 
   }, [state]);
 
   return (
+    <group>
+      {cubies.map((cubie, i) => {
+        const [x, y, z] = cubie.coords;
+        const isOnFace = currentAnimation ? isCubieOnFace(x, y, z, currentAnimation.face) : false;
+
+        return (
+          <Cubie
+            key={i}
+            position={cubie.position}
+            faces={cubie.faces}
+            animating={isAnimating && isOnFace}
+            animationAxis={currentAnimation ? FACE_TO_AXIS[currentAnimation.face] : undefined}
+            animationAngle={currentAnimation && isOnFace ? ANGLE_MAP[currentAnimation.direction] : undefined}
+          />
+        );
+      })}
+    </group>
+  );
+};
+
+export const RubiksCube: React.FC = () => {
+  return (
     <Canvas
       camera={{ position: [3, 3, 3], fov: 50 }}
       style={{ width: '100%', height: '100%' }}
@@ -107,16 +195,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlightedPositions }) 
       <directionalLight position={[5, 5, 5]} intensity={0.8} />
       <directionalLight position={[-5, -5, -5]} intensity={0.3} />
 
-      <group>
-        {cubies.map((cubie, i) => (
-          <Cubie
-            key={i}
-            position={cubie.position}
-            faces={cubie.faces}
-            highlighted={highlightedPositions?.has(`${cubie.position}`)}
-          />
-        ))}
-      </group>
+      <AnimatedCubies />
 
       <OrbitControls
         enablePan={false}

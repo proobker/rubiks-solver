@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CubeState, MoveString } from '@/shared/types/cube';
+import type { CubeState, MoveString, FaceName } from '@/shared/types/cube';
 import { SOLVED_STATE } from '@/shared/types/cube';
 import { applyMove, applyMoves, cloneState, isSolved } from '@/features/engine/moves';
 import { generateScramble } from '@/features/engine/scramble';
@@ -9,24 +9,39 @@ interface HistoryEntry {
   move: MoveString;
 }
 
+export interface PendingMove {
+  move: MoveString;
+  face: FaceName;
+  direction: 1 | -1 | 2;
+}
+
 interface CubeStore {
   state: CubeState;
   history: HistoryEntry[];
-  moveQueue: MoveString[];
+  moveQueue: PendingMove[];
   isAnimating: boolean;
+  currentAnimation: PendingMove | null;
   moveSpeed: number;
   solved: boolean;
   scrambleMoves: MoveString[];
 
   applyMove: (move: MoveString) => void;
   applyAlgorithm: (moves: MoveString[]) => void;
+  processNextMove: () => void;
+  onAnimationComplete: () => void;
   scramble: (length?: number) => void;
   reset: () => void;
   undo: () => void;
-  setAnimating: (animating: boolean) => void;
   setMoveSpeed: (speed: number) => void;
-  dequeueMove: () => MoveString | null;
   getInverseAlgorithm: () => MoveString[];
+}
+
+function parseMove(moveStr: MoveString): PendingMove {
+  const face = moveStr[0] as FaceName;
+  let direction: 1 | -1 | 2 = 1;
+  if (moveStr.includes("'")) direction = -1;
+  else if (moveStr.includes('2')) direction = 2;
+  return { move: moveStr, face, direction };
 }
 
 export const useCubeStore = create<CubeStore>((set, get) => ({
@@ -34,36 +49,62 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   history: [],
   moveQueue: [],
   isAnimating: false,
+  currentAnimation: null,
   moveSpeed: 1,
   solved: true,
   scrambleMoves: [],
 
   applyMove: (move) => {
-    const { state, history } = get();
-    const newState = applyMove(state, move);
-    set({
-      state: newState,
-      history: [...history, { state: cloneState(state), move }],
-      solved: isSolved(newState),
-    });
+    const { moveQueue, isAnimating } = get();
+    const pending = parseMove(move);
+
+    if (isAnimating || moveQueue.length > 0) {
+      set({ moveQueue: [...moveQueue, pending] });
+    } else {
+      set({ currentAnimation: pending, isAnimating: true });
+    }
   },
 
   applyAlgorithm: (moves) => {
-    const { state, history } = get();
-    let currentState = cloneState(state);
-    const newHistory = [...history];
+    const { moveQueue, isAnimating } = get();
+    const pendingMoves = moves.map(parseMove);
 
-    for (const move of moves) {
-      const prevState = cloneState(currentState);
-      currentState = applyMove(currentState, move);
-      newHistory.push({ state: prevState, move });
+    if (isAnimating || moveQueue.length > 0) {
+      set({ moveQueue: [...moveQueue, ...pendingMoves] });
+    } else {
+      const [first, ...rest] = pendingMoves;
+      set({
+        currentAnimation: first,
+        isAnimating: true,
+        moveQueue: rest,
+      });
     }
+  },
+
+  processNextMove: () => {
+    const { moveQueue } = get();
+    if (moveQueue.length === 0) {
+      set({ isAnimating: false, currentAnimation: null });
+      return;
+    }
+    const [next, ...rest] = moveQueue;
+    set({ currentAnimation: next, moveQueue: rest });
+  },
+
+  onAnimationComplete: () => {
+    const { state, history, currentAnimation } = get();
+    if (!currentAnimation) return;
+
+    const newState = applyMove(state, currentAnimation.move);
+    const newHistory = [...history, { state: cloneState(state), move: currentAnimation.move }];
 
     set({
-      state: currentState,
+      state: newState,
       history: newHistory,
-      solved: isSolved(currentState),
+      solved: isSolved(newState),
     });
+
+    get().processNextMove();
   },
 
   scramble: (length = 20) => {
@@ -74,6 +115,9 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       history: [],
       scrambleMoves: moves,
       solved: false,
+      moveQueue: [],
+      currentAnimation: null,
+      isAnimating: false,
     });
   },
 
@@ -83,11 +127,15 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       history: [],
       solved: true,
       scrambleMoves: [],
+      moveQueue: [],
+      currentAnimation: null,
+      isAnimating: false,
     });
   },
 
   undo: () => {
-    const { history } = get();
+    const { history, isAnimating } = get();
+    if (isAnimating) return;
     if (history.length === 0) return;
     const last = history[history.length - 1];
     set({
@@ -97,17 +145,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
     });
   },
 
-  setAnimating: (animating) => set({ isAnimating: animating }),
-
   setMoveSpeed: (speed) => set({ moveSpeed: speed }),
-
-  dequeueMove: () => {
-    const { moveQueue } = get();
-    if (moveQueue.length === 0) return null;
-    const [next, ...rest] = moveQueue;
-    set({ moveQueue: rest });
-    return next;
-  },
 
   getInverseAlgorithm: () => {
     const { history } = get();
