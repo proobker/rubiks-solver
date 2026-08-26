@@ -84,9 +84,10 @@ const AlgorithmCard: React.FC<AlgorithmCardProps> = ({ algorithm, onApply }) => 
 interface LearningPanelProps {
   completedStages: Set<string>;
   onStageComplete: (stageId: string) => void;
+  onStageSelect?: (stageId: string) => void;
 }
 
-export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages }) => {
+export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, onStageSelect }) => {
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
   const { applyAlgorithm } = useCubeStore();
 
@@ -112,7 +113,10 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages })
               isActive={selectedStage.id === stage.id}
               isCompleted={completedStages.has(stage.id)}
               isLocked={isStageLocked(stage)}
-              onSelect={() => setSelectedStage(stage)}
+              onSelect={() => {
+                setSelectedStage(stage);
+                onStageSelect?.(stage.id);
+              }}
             />
           ))}
         </div>

@@ -1,17 +1,19 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RubiksCube } from '@/features/cube/rubiks-cube';
 import { MovePanel } from '@/components/ui/move-button';
 import { LearningPanel } from '@/features/learning/learning-panel';
 import { SolvePanel } from '@/features/solver/solve-panel';
 import { useCubeStore } from '@/shared/stores/cube-store';
+import { getStageHighlights } from '@/features/learning/highlights';
 import type { MoveString } from '@/shared/types/cube';
 
 type Tab = 'moves' | 'learn' | 'solve';
 
 export const App: React.FC = () => {
-  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed } = useCubeStore();
+  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, state } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
 
   const handleMove = useCallback((move: MoveString) => {
     applyMove(move);
@@ -20,6 +22,15 @@ export const App: React.FC = () => {
   const handleStageComplete = useCallback((stageId: string) => {
     setCompletedStages((prev) => new Set([...prev, stageId]));
   }, []);
+
+  const handleStageSelect = useCallback((stageId: string) => {
+    setSelectedStageId(stageId);
+  }, []);
+
+  const highlights = useMemo(() => {
+    if (!selectedStageId || activeTab !== 'learn') return undefined;
+    return getStageHighlights(selectedStageId, state);
+  }, [selectedStageId, activeTab, state]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement) return;
@@ -136,6 +147,7 @@ export const App: React.FC = () => {
             <LearningPanel
               completedStages={completedStages}
               onStageComplete={handleStageComplete}
+              onStageSelect={handleStageSelect}
             />
           )}
 
@@ -149,7 +161,7 @@ export const App: React.FC = () => {
             Solved!
           </div>
         )}
-        <RubiksCube />
+        <RubiksCube highlights={highlights} />
       </main>
     </div>
   );
