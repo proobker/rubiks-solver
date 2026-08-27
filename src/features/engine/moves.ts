@@ -28,19 +28,6 @@ function rotateFaceCW(face: Face): Face {
   return result;
 }
 
-function rotateFaceCCW(face: Face): Face {
-  const result = cloneFace(face);
-  result[0][0] = face[0][2];
-  result[0][1] = face[1][2];
-  result[0][2] = face[2][2];
-  result[1][0] = face[0][1];
-  result[1][2] = face[2][1];
-  result[2][0] = face[0][0];
-  result[2][1] = face[1][0];
-  result[2][2] = face[2][0];
-  return result;
-}
-
 
 
 const clockwiseCycle: Record<FaceName, (state: CubeState) => void> = {
@@ -138,18 +125,13 @@ const clockwiseCycle: Record<FaceName, (state: CubeState) => void> = {
 
 function applyFaceTurn(state: CubeState, face: FaceName, direction: MoveDirection): CubeState {
   const result = cloneState(state);
-  
-  const turns = direction === 2 ? 2 : 1;
+
+  const turns = direction === -1 ? 3 : direction === 2 ? 2 : 1;
   for (let i = 0; i < turns; i++) {
-    if (direction === -1) {
-      clockwiseCycle[face](result);
-      result[face] = rotateFaceCCW(result[face]);
-    } else {
-      clockwiseCycle[face](result);
-      result[face] = rotateFaceCW(result[face]);
-    }
+    clockwiseCycle[face](result);
+    result[face] = rotateFaceCW(result[face]);
   }
-  
+
   return result;
 }
 

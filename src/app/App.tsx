@@ -12,10 +12,15 @@ import type { MoveString } from '@/shared/types/cube';
 type Tab = 'moves' | 'learn' | 'solve';
 
 export const App: React.FC = () => {
-  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, state, isAnimating, applyScramble, scrambleMoves } = useCubeStore();
+  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, isAnimating, applyScramble, scrambleMoves, pieces } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
+  const [mode, setMode] = useState<'turn' | 'orbit'>('turn');
+
+  const handleToggleMode = useCallback(() => {
+    setMode((m) => (m === 'turn' ? 'orbit' : 'turn'));
+  }, []);
 
   const handleMove = useCallback((move: MoveString) => {
     applyMove(move);
@@ -40,8 +45,8 @@ export const App: React.FC = () => {
 
   const highlights = useMemo(() => {
     if (!selectedStageId || activeTab !== 'learn') return undefined;
-    return getStageHighlights(selectedStageId, state);
-  }, [selectedStageId, activeTab, state]);
+    return getStageHighlights(selectedStageId, pieces);
+  }, [selectedStageId, activeTab, pieces]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement) return;
@@ -188,11 +193,16 @@ export const App: React.FC = () => {
             Solved!
           </div>
         )}
-        <div className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700">
-          Drag the cube to rotate faces
+        <div
+          className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700"
+          onDoubleClick={mode === 'orbit' ? handleToggleMode : undefined}
+        >
+          {mode === 'turn'
+            ? 'Drag to rotate faces · double-tap for orbit/pan'
+            : 'Orbit/pan mode · double-tap to turn faces'}
         </div>
-        <RubiksCube highlights={highlights} />
-        <DragRotate onMove={handleDragMove} disabled={isAnimating} />
+        <RubiksCube highlights={highlights} mode={mode} onToggleMode={handleToggleMode} />
+        <DragRotate onMove={handleDragMove} onToggleMode={handleToggleMode} disabled={isAnimating} mode={mode} />
       </main>
     </div>
   );

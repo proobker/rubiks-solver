@@ -1,12 +1,30 @@
 import { create } from 'zustand';
 import type { CubeState, MoveString, FaceName } from '@/shared/types/cube';
-import { SOLVED_STATE } from '@/shared/types/cube';
+import { SOLVED_STATE, FACE_TO_AXIS } from '@/shared/types/cube';
 import { applyMove, applyMoves, cloneState, isSolved } from '@/features/engine/moves';
 import { generateScramble } from '@/features/engine/scramble';
+import {
+  buildSolvedPieces,
+  applyMoveToPieces,
+  applyMovesToPieces,
+  clonePieces,
+} from '@/features/engine/pieces';
+import type { Piece } from '@/features/engine/pieces';
 
 interface HistoryEntry {
   state: CubeState;
+  pieces: Piece[];
   move: MoveString;
+}
+
+export function piecesForMoves(moves: MoveString[]): Piece[] {
+  return applyMovesToPieces(
+    buildSolvedPieces(),
+    moves.map((move) => ({
+      axis: FACE_TO_AXIS[move[0] as FaceName],
+      direction: move.includes("'") ? -1 : move.includes('2') ? 2 : 1,
+    })),
+  );
 }
 
 export interface PendingMove {
@@ -17,6 +35,7 @@ export interface PendingMove {
 
 interface CubeStore {
   state: CubeState;
+  pieces: Piece[];
   history: HistoryEntry[];
   moveQueue: PendingMove[];
   isAnimating: boolean;
@@ -47,6 +66,7 @@ function parseMove(moveStr: MoveString): PendingMove {
 
 export const useCubeStore = create<CubeStore>((set, get) => ({
   state: cloneState(SOLVED_STATE),
+  pieces: buildSolvedPieces(),
   history: [],
   moveQueue: [],
   isAnimating: false,
@@ -93,14 +113,23 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   },
 
   onAnimationComplete: () => {
-    const { state, history, currentAnimation } = get();
+    const { state, pieces, history, currentAnimation } = get();
     if (!currentAnimation) return;
 
     const newState = applyMove(state, currentAnimation.move);
-    const newHistory = [...history, { state: cloneState(state), move: currentAnimation.move }];
+    const newPieces = applyMoveToPieces(
+      pieces,
+      FACE_TO_AXIS[currentAnimation.face],
+      currentAnimation.direction,
+    );
+    const newHistory = [
+      ...history,
+      { state: cloneState(state), pieces: clonePieces(pieces), move: currentAnimation.move },
+    ];
 
     set({
       state: newState,
+      pieces: newPieces,
       history: newHistory,
       solved: isSolved(newState),
     });
@@ -111,8 +140,10 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   scramble: (length = 20) => {
     const moves = generateScramble(length);
     const newState = applyMoves(cloneState(SOLVED_STATE), moves);
+    const newPieces = piecesForMoves(moves);
     set({
       state: newState,
+      pieces: newPieces,
       history: [],
       scrambleMoves: moves,
       solved: false,
@@ -124,8 +155,10 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
 
   applyScramble: (moves) => {
     const newState = applyMoves(cloneState(SOLVED_STATE), moves);
+    const newPieces = piecesForMoves(moves);
     set({
       state: newState,
+      pieces: newPieces,
       history: [],
       scrambleMoves: moves,
       solved: false,
@@ -138,6 +171,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   reset: () => {
     set({
       state: cloneState(SOLVED_STATE),
+      pieces: buildSolvedPieces(),
       history: [],
       solved: true,
       scrambleMoves: [],
@@ -154,6 +188,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
     const last = history[history.length - 1];
     set({
       state: last.state,
+      pieces: last.pieces,
       history: history.slice(0, -1),
       solved: isSolved(last.state),
     });

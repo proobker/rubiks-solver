@@ -1,118 +1,113 @@
-import type { CubeState, FaceName, FaceColor } from '@/shared/types/cube';
+import type { Piece } from '@/features/engine/pieces';
+import { pieceAt, stickerColorOn } from '@/features/engine/pieces';
 
-export interface HighlightedPiece {
-  position: [number, number, number];
-  label?: string;
-}
+export type HighlightMap = Map<number, { label?: string }>;
 
-export function getStageHighlights(stageId: string, state: CubeState): HighlightedPiece[] {
+export function getStageHighlights(
+  stageId: string,
+  pieces: Piece[],
+  labelForId?: (id: number) => string | undefined,
+): HighlightMap {
+  const highlights = new Map<number, { label?: string }>();
+  const add = (id: number) => {
+    const label = labelForId?.(id);
+    highlights.set(id, { label });
+  };
+
   switch (stageId) {
-    case 'white-cross':
-      return getWhiteCrossHighlights(state);
-    case 'white-corners':
-      return getWhiteCornerHighlights(state);
-    case 'middle-layer':
-      return getMiddleLayerHighlights();
-    case 'yellow-cross':
-      return getYellowCrossHighlights();
-    case 'yellow-face':
-      return getYellowFaceHighlights();
-    case 'position-corners':
-      return getPositionCornerHighlights();
-    case 'permute-edges':
-      return getPermuteEdgeHighlights();
-    default:
-      return [];
-  }
-}
-
-function getWhiteCrossHighlights(state: CubeState): HighlightedPiece[] {
-  const pieces: HighlightedPiece[] = [];
-  const white = 'white';
-
-  const edges: [number, number, number][] = [
-    [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
-    [0, -1, 1], [0, -1, -1], [1, -1, 0], [-1, -1, 0],
-    [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  ];
-
-  for (const [x, y, z] of edges) {
-    const faces = getCubieFaces(state, x, y, z);
-    if (faces.U === white || faces.D === white || faces.F === white || faces.B === white) {
-      pieces.push({ position: [x, y, z] });
+    case 'white-cross': {
+      const piecesToHighlight = edgeSlots.filter(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (!piece) return false;
+        return ['U', 'D', 'F', 'B'].some((f) => stickerColorOn(piece, f as never) === 'white');
+      });
+      piecesToHighlight.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
+    }
+    case 'white-corners': {
+      cornerSlots
+        .filter(([x, y, z]) => {
+          const piece = pieceAt(pieces, x, y, z);
+          if (!piece) return false;
+          return stickerColorOn(piece, 'U') === 'white' || stickerColorOn(piece, 'D') === 'white';
+        })
+        .forEach(([x, y, z]) => {
+          const piece = pieceAt(pieces, x, y, z);
+          if (piece) add(piece.id);
+        });
+      break;
+    }
+    case 'middle-layer': {
+      middleLayerSlots.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
+    }
+    case 'yellow-cross': {
+      yellowCrossSlots.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
+    }
+    case 'yellow-face': {
+      yellowFaceSlots.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
+    }
+    case 'position-corners': {
+      cornerSlots.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
+    }
+    case 'permute-edges': {
+      edgeAllSlots.forEach(([x, y, z]) => {
+        const piece = pieceAt(pieces, x, y, z);
+        if (piece) add(piece.id);
+      });
+      break;
     }
   }
 
-  return pieces;
+  return highlights;
 }
 
-function getWhiteCornerHighlights(state: CubeState): HighlightedPiece[] {
-  const corners: [number, number, number][] = [
-    [1, 1, 1], [-1, 1, 1], [1, 1, -1], [-1, 1, -1],
-    [1, -1, 1], [-1, -1, 1], [1, -1, -1], [-1, -1, -1],
-  ];
+type Slot = [number, number, number];
 
-  return corners
-    .filter(([x, y, z]) => {
-      const faces = getCubieFaces(state, x, y, z);
-      return faces.U === 'white' || faces.D === 'white';
-    })
-    .map(([x, y, z]) => ({ position: [x, y, z] }));
-}
+const edgeSlots: Slot[] = [
+  [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
+  [0, -1, 1], [0, -1, -1], [1, -1, 0], [-1, -1, 0],
+  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+];
 
-function getMiddleLayerHighlights(): HighlightedPiece[] {
-  const edges: [number, number, number][] = [
-    [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  ];
+const cornerSlots: Slot[] = [
+  [1, 1, 1], [-1, 1, 1], [1, 1, -1], [-1, 1, -1],
+  [1, -1, 1], [-1, -1, 1], [1, -1, -1], [-1, -1, -1],
+];
 
-  return edges.map(([x, y, z]) => ({ position: [x, y, z] }));
-}
+const middleLayerSlots: Slot[] = [
+  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+];
 
-function getYellowCrossHighlights(): HighlightedPiece[] {
-  const edges: [number, number, number][] = [
-    [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
-  ];
+const yellowCrossSlots: Slot[] = [
+  [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
+];
 
-  return edges.map(([x, y, z]) => ({ position: [x, y, z] }));
-}
+const yellowFaceSlots: Slot[] = [
+  [1, 1, 1], [-1, 1, 1], [1, 1, -1], [-1, 1, -1],
+  [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
+];
 
-function getYellowFaceHighlights(): HighlightedPiece[] {
-  const pieces: [number, number, number][] = [
-    [1, 1, 1], [-1, 1, 1], [1, 1, -1], [-1, 1, -1],
-    [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
-  ];
-
-  return pieces.map(([x, y, z]) => ({ position: [x, y, z] }));
-}
-
-function getPositionCornerHighlights(): HighlightedPiece[] {
-  const corners: [number, number, number][] = [
-    [1, 1, 1], [-1, 1, 1], [1, 1, -1], [-1, 1, -1],
-    [1, -1, 1], [-1, -1, 1], [1, -1, -1], [-1, -1, -1],
-  ];
-
-  return corners.map(([x, y, z]) => ({ position: [x, y, z] }));
-}
-
-function getPermuteEdgeHighlights(): HighlightedPiece[] {
-  const edges: [number, number, number][] = [
-    [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
-    [0, -1, 1], [0, -1, -1], [1, -1, 0], [-1, -1, 0],
-    [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
-  ];
-
-  return edges.map(([x, y, z]) => ({ position: [x, y, z] }));
-}
-
-function getCubieFaces(state: CubeState, x: number, y: number, z: number): Partial<Record<FaceName, FaceColor>> {
-  const faces: Partial<Record<FaceName, FaceColor>> = {};
-
-  if (y === 1) faces.U = state.U[2 - z + 1][x + 1];
-  if (y === -1) faces.D = state.D[z + 1][x + 1];
-  if (z === 1) faces.F = state.F[y === 1 ? 0 : y === -1 ? 2 : 1][x + 1];
-  if (z === -1) faces.B = state.B[y === 1 ? 0 : y === -1 ? 2 : 1][2 - (x + 1)];
-  if (x === -1) faces.L = state.L[y === 1 ? 0 : y === -1 ? 2 : 1][z === 1 ? 2 : z === -1 ? 0 : 1];
-  if (x === 1) faces.R = state.R[y === 1 ? 0 : y === -1 ? 2 : 1][z === 1 ? 0 : z === -1 ? 2 : 1];
-
-  return faces;
-}
+const edgeAllSlots: Slot[] = [
+  [0, 1, 1], [0, 1, -1], [1, 1, 0], [-1, 1, 0],
+  [0, -1, 1], [0, -1, -1], [1, -1, 0], [-1, -1, 0],
+  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+];
