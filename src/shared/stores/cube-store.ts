@@ -30,6 +30,7 @@ interface CubeStore {
   processNextMove: () => void;
   onAnimationComplete: () => void;
   scramble: (length?: number) => void;
+  applyScramble: (moves: MoveString[]) => void;
   reset: () => void;
   undo: () => void;
   setMoveSpeed: (speed: number) => void;
@@ -109,6 +110,19 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
 
   scramble: (length = 20) => {
     const moves = generateScramble(length);
+    const newState = applyMoves(cloneState(SOLVED_STATE), moves);
+    set({
+      state: newState,
+      history: [],
+      scrambleMoves: moves,
+      solved: false,
+      moveQueue: [],
+      currentAnimation: null,
+      isAnimating: false,
+    });
+  },
+
+  applyScramble: (moves) => {
     const newState = applyMoves(cloneState(SOLVED_STATE), moves);
     set({
       state: newState,

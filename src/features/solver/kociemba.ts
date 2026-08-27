@@ -32,7 +32,7 @@ export async function solveCube(state: CubeState): Promise<MoveString[]> {
   return solution.trim().split(/\s+/).filter(Boolean) as MoveString[];
 }
 
-export async function generateWCAStateScramble(): Promise<MoveString[]> {
+export async function generateStateScramble(): Promise<MoveString[]> {
   await ensureSolver();
   const scramble = kociembaScramble();
   return scramble.trim().split(/\s+/).filter(Boolean) as MoveString[];

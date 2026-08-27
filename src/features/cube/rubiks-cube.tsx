@@ -217,6 +217,9 @@ interface RubiksCubeProps {
 }
 
 export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
+  const currentAnimation = useCubeStore((s) => s.currentAnimation);
+  const isAnimating = useCubeStore((s) => s.isAnimating);
+
   return (
     <Canvas
       camera={{ position: [3, 3, 3], fov: 50 }}
@@ -227,6 +230,14 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
       <directionalLight position={[-5, -5, -5]} intensity={0.3} />
 
       <AnimatedCubies highlights={highlights} />
+
+      {isAnimating && currentAnimation && (
+        <Html center position={[0, -2.2, 0]}>
+          <div className="bg-black/80 text-white text-xl font-mono px-4 py-2 rounded-lg border-2 border-yellow-400/50 shadow-lg">
+            {currentAnimation.move}
+          </div>
+        </Html>
+      )}
 
       <OrbitControls
         enablePan={false}

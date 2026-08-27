@@ -3,14 +3,16 @@ import { RubiksCube } from '@/features/cube/rubiks-cube';
 import { MovePanel } from '@/components/ui/move-button';
 import { LearningPanel } from '@/features/learning/learning-panel';
 import { SolvePanel } from '@/features/solver/solve-panel';
+import { DragRotate } from '@/features/cube/drag-rotate';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { getStageHighlights } from '@/features/learning/highlights';
+import { generateWCAScramble } from '@/features/engine/wca-scramble';
 import type { MoveString } from '@/shared/types/cube';
 
 type Tab = 'moves' | 'learn' | 'solve';
 
 export const App: React.FC = () => {
-  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, state } = useCubeStore();
+  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, state, isAnimating, applyScramble, scrambleMoves } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
@@ -18,6 +20,15 @@ export const App: React.FC = () => {
   const handleMove = useCallback((move: MoveString) => {
     applyMove(move);
   }, [applyMove]);
+
+  const handleDragMove = useCallback((move: string) => {
+    applyMove(move as MoveString);
+  }, [applyMove]);
+
+  const handleWCAScramble = useCallback(async () => {
+    const moves = await generateWCAScramble();
+    applyScramble(moves);
+  }, [applyScramble]);
 
   const handleStageComplete = useCallback((stageId: string) => {
     setCompletedStages((prev) => new Set([...prev, stageId]));
@@ -100,6 +111,13 @@ export const App: React.FC = () => {
                 >
                   Scramble
                 </button>
+                <button
+                  onClick={() => handleWCAScramble()}
+                  className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg font-medium text-sm transition-colors"
+                  title="WCA-compliant state scramble"
+                >
+                  WCA Scramble
+                </button>
                 <div className="flex gap-2">
                   <button
                     onClick={reset}
@@ -131,6 +149,15 @@ export const App: React.FC = () => {
                 />
               </div>
 
+              {scrambleMoves.length > 0 && (
+                <div className="border-t border-zinc-800 pt-4">
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Scramble:</p>
+                  <div className="font-mono text-sm text-zinc-300 flex flex-wrap gap-1 bg-zinc-800/50 p-2 rounded-lg">
+                    {scrambleMoves.join(' ')}
+                  </div>
+                </div>
+              )}
+
               <div className="border-t border-zinc-800 pt-4">
                 <h2 className="text-xs font-medium text-zinc-400 mb-3">Moves</h2>
                 <MovePanel onMove={handleMove} />
@@ -161,7 +188,11 @@ export const App: React.FC = () => {
             Solved!
           </div>
         )}
+        <div className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700">
+          Drag the cube to rotate faces
+        </div>
         <RubiksCube highlights={highlights} />
+        <DragRotate onMove={handleDragMove} disabled={isAnimating} />
       </main>
     </div>
   );

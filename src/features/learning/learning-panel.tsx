@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BEGINNER_STAGES, type LearningStage, type Algorithm } from './stages';
+import { BEGINNER_STAGES, CFOP_STAGES, type LearningStage, type Algorithm } from './stages';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { parseAlgorithm } from '@/features/engine/moves';
 
@@ -34,7 +34,7 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isActive, isCompleted, isL
               ? 'bg-blue-500 text-white'
               : 'bg-zinc-700 text-zinc-300'
         }`}>
-          {isCompleted ? '✓' : stage.order}
+          {isCompleted ? '✓' : stage.order - (stage.method === 'beginner' ? 0 : 7)}
         </span>
         <span className="font-medium text-sm">{stage.name}</span>
       </div>
@@ -87,9 +87,14 @@ interface LearningPanelProps {
   onStageSelect?: (stageId: string) => void;
 }
 
+type MethodTab = 'beginner' | 'cfop';
+
 export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, onStageSelect }) => {
+  const [method, setMethod] = useState<MethodTab>('beginner');
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
   const { applyAlgorithm } = useCubeStore();
+
+  const stages = method === 'beginner' ? BEGINNER_STAGES : CFOP_STAGES;
 
   const handleApply = (notation: string) => {
     const moves = parseAlgorithm(notation);
@@ -101,46 +106,80 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
     return !completedStages.has(stage.prerequisite);
   };
 
+  const defaultStage = stages[0];
+  const activeStage = stages.find((s) => s.id === selectedStage.id) ?? defaultStage;
+
+  const selectStage = (stage: LearningStage) => {
+    setSelectedStage(stage);
+    onStageSelect?.(stage.id);
+  };
+
+  const switchMethod = (m: MethodTab) => {
+    setMethod(m);
+    const first = m === 'beginner' ? BEGINNER_STAGES[0] : CFOP_STAGES[0];
+    setSelectedStage(first);
+    onStageSelect?.(first.id);
+  };
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-300 mb-3">Beginner Method</h2>
+        <div className="flex gap-1 bg-zinc-800/50 p-1 rounded-lg mb-3">
+          <button
+            onClick={() => switchMethod('beginner')}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              method === 'beginner'
+                ? 'bg-zinc-700 text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Beginner
+          </button>
+          <button
+            onClick={() => switchMethod('cfop')}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              method === 'cfop'
+                ? 'bg-zinc-700 text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            CFOP
+          </button>
+        </div>
+
         <div className="space-y-2">
-          {BEGINNER_STAGES.map((stage) => (
+          {stages.map((stage) => (
             <StageCard
               key={stage.id}
               stage={stage}
-              isActive={selectedStage.id === stage.id}
+              isActive={activeStage.id === stage.id}
               isCompleted={completedStages.has(stage.id)}
               isLocked={isStageLocked(stage)}
-              onSelect={() => {
-                setSelectedStage(stage);
-                onStageSelect?.(stage.id);
-              }}
+              onSelect={() => selectStage(stage)}
             />
           ))}
         </div>
       </div>
 
       <div className="border-t border-zinc-800 pt-4">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-2">{selectedStage.name}</h3>
-        <p className="text-xs text-zinc-400 mb-3">{selectedStage.description}</p>
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">{activeStage.name}</h3>
+        <p className="text-xs text-zinc-400 mb-3">{activeStage.description}</p>
 
         <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/50 mb-3">
           <p className="text-xs font-medium text-zinc-300 mb-1">Goal:</p>
-          <p className="text-xs text-zinc-400">{selectedStage.goal}</p>
+          <p className="text-xs text-zinc-400">{activeStage.goal}</p>
         </div>
 
-        {selectedStage.algorithms.length > 0 && (
+        {activeStage.algorithms.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-zinc-300">Algorithms:</p>
-            {selectedStage.algorithms.map((algo) => (
+            {activeStage.algorithms.map((algo) => (
               <AlgorithmCard key={algo.id} algorithm={algo} onApply={handleApply} />
             ))}
           </div>
         )}
 
-        {selectedStage.algorithms.length === 0 && (
+        {activeStage.algorithms.length === 0 && (
           <p className="text-xs text-zinc-500 italic">
             This stage is intuitive — no algorithms needed. Practice finding and inserting the pieces by eye.
           </p>

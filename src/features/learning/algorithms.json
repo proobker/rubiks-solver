@@ -1,0 +1,281 @@
+{
+  "stages": [
+    {
+      "id": "white-cross",
+      "name": "White Cross",
+      "method": "beginner",
+      "description": "Form a white cross on the white face with correct edge colors matching the center pieces.",
+      "order": 1,
+      "goal": "The white face shows a + shape, and each edge piece matches the center color of the adjacent face.",
+      "algorithms": [],
+      "prerequisite": null
+    },
+    {
+      "id": "white-corners",
+      "name": "White Corners",
+      "method": "beginner",
+      "description": "Insert the four white corner pieces to complete the first layer.",
+      "order": 2,
+      "goal": "The entire white face is complete, and the first layer side colors match their center pieces.",
+      "algorithms": [
+        {
+          "id": "right-insert",
+          "notation": "R U R' U'",
+          "description": "Insert a white corner from the bottom-right position into the top layer."
+        },
+        {
+          "id": "left-insert",
+          "notation": "L' U' L U",
+          "description": "Insert a white corner from the bottom-left position into the top layer."
+        }
+      ],
+      "prerequisite": "white-cross"
+    },
+    {
+      "id": "middle-layer",
+      "name": "Middle Layer Edges",
+      "method": "beginner",
+      "description": "Insert the four middle layer edge pieces without disturbing the completed first layer.",
+      "order": 3,
+      "goal": "The first two layers (F2L) are complete — white face done and middle ring of colors matches centers.",
+      "algorithms": [
+        {
+          "id": "insert-right",
+          "notation": "U R U' R' U' F' U F",
+          "description": "Insert an edge piece from the top layer into the middle layer on the right side."
+        },
+        {
+          "id": "insert-left",
+          "notation": "U' L' U L U F U' F'",
+          "description": "Insert an edge piece from the top layer into the middle layer on the left side."
+        }
+      ],
+      "prerequisite": "white-corners"
+    },
+    {
+      "id": "yellow-cross",
+      "name": "Yellow Cross",
+      "method": "beginner",
+      "description": "Form a yellow cross on the yellow face (top).",
+      "order": 4,
+      "goal": "The yellow face shows a + shape. Corner orientation does not matter yet.",
+      "algorithms": [
+        {
+          "id": "edge-flip",
+          "notation": "F R U R' U' F'",
+          "description": "Orients the yellow edges. Apply 1-3 times depending on the starting pattern.",
+          "cases": [
+            { "id": "dot", "name": "Dot", "pattern": "•", "moves": "F R U R' U' F' (×2-3)", "description": "No edges oriented — apply algorithm twice." },
+            { "id": "l-shape", "name": "L-Shape", "pattern": "┗", "moves": "F R U R' U' F'", "description": "Two adjacent edges oriented — hold L in top-left and apply once." },
+            { "id": "line", "name": "Line", "pattern": "—", "moves": "F R U R' U' F'", "description": "Two opposite edges oriented — hold line horizontal and apply once." }
+          ]
+        }
+      ],
+      "prerequisite": "middle-layer"
+    },
+    {
+      "id": "yellow-face",
+      "name": "Yellow Face",
+      "method": "beginner",
+      "description": "Orient all yellow stickers on the yellow face so the entire face is solid yellow.",
+      "order": 5,
+      "goal": "The entire yellow face is yellow. Side colors of the last layer may still be incorrect.",
+      "algorithms": [
+        {
+          "id": "sune",
+          "notation": "R U R' U R U2 R'",
+          "description": "Orients corners. Apply 1-2 times with correct positioning.",
+          "cases": [
+            { "id": "sune", "name": "Sune", "pattern": "fish", "moves": "R U R' U R U2 R'", "description": "One corner oriented — hold the oriented corner at front-left." },
+            { "id": "antisune", "name": "Anti-Sune", "pattern": "fish-rev", "moves": "R U2 R' U' R U' R'", "description": "Mirror case — one corner oriented, different angle." }
+          ]
+        }
+      ],
+      "prerequisite": "yellow-cross"
+    },
+    {
+      "id": "position-corners",
+      "name": "Position Yellow Corners",
+      "method": "beginner",
+      "description": "Move the yellow corner pieces to their correct positions (permutation).",
+      "order": 6,
+      "goal": "Each yellow corner is in its correct position, though they may need to be twisted.",
+      "algorithms": [
+        {
+          "id": "corner-cycle",
+          "notation": "U R U' L' U R' U' L",
+          "description": "Cycles three corners clockwise. Apply 1-2 times to position all corners."
+        }
+      ],
+      "prerequisite": "yellow-face"
+    },
+    {
+      "id": "permute-edges",
+      "name": "Permute Yellow Edges",
+      "method": "beginner",
+      "description": "Cycle the yellow edge pieces to their final correct positions to complete the cube.",
+      "order": 7,
+      "goal": "The entire cube is solved!",
+      "algorithms": [
+        {
+          "id": "edge-cycle",
+          "notation": "R U' R U R U R U' R' U' R2",
+          "description": "Cycles three edges clockwise. Apply 1-2 times to solve.",
+          "cases": [
+            { "id": "clockwise", "name": "Clockwise", "pattern": "→", "moves": "R U' R U R U R U' R' U' R2", "description": "Three edges need clockwise rotation." },
+            { "id": "counter-clockwise", "name": "Counter-clockwise", "pattern": "←", "moves": "R2 U R U R' U' R' U' R' U R'", "description": "Three edges need counter-clockwise rotation." }
+          ]
+        }
+      ],
+      "prerequisite": "position-corners"
+    },
+    {
+      "id": "cfop-cross",
+      "name": "Efficient Cross",
+      "method": "cfop",
+      "description": "Build the cross in 8 moves or fewer, with proper planning and color neutrality.",
+      "order": 8,
+      "goal": "Solve the cross in ≤8 moves with all edges correctly oriented to their centers.",
+      "algorithms": [],
+      "prerequisite": "permute-edges"
+    },
+    {
+      "id": "cfop-f2l",
+      "name": "F2L (First Two Layers)",
+      "method": "cfop",
+      "description": "Pair corner-edge pieces and insert them simultaneously. 41 algorithms total, but intuitive F2L is recommended first.",
+      "order": 9,
+      "goal": "All 4 F2L slots filled — first two layers complete in far fewer moves than beginner method.",
+      "algorithms": [
+        {
+          "id": "basic-pair-right",
+          "notation": "U R U' R'",
+          "description": "Basic case: edge and corner already paired, insert with R trigger."
+        },
+        {
+          "id": "basic-pair-left",
+          "notation": "U' L' U L",
+          "description": "Basic case: edge and corner already paired, insert with L trigger."
+        },
+        {
+          "id": "split-pair",
+          "notation": "U R U' R' U' F U F'",
+          "description": "Split a misaligned pair and insert using R and F triggers."
+        },
+        {
+          "id": "3-cycle-pair",
+          "notation": "U' R U R' U R U' R'",
+          "description": "3-cycle approach for pairing separated corner and edge."
+        }
+      ],
+      "prerequisite": "cfop-cross"
+    },
+    {
+      "id": "cfop-oll-2look",
+      "name": "OLL (2-Look)",
+      "method": "cfop",
+      "description": "Orient the last layer in two steps: edges first, then corners. Uses 9 algorithms instead of 57.",
+      "order": 10,
+      "goal": "Entire yellow face is solid yellow.",
+      "algorithms": [
+        {
+          "id": "oll-edge-1",
+          "notation": "F R U R' U' F'",
+          "description": "Edge orientation: same as beginner yellow cross.",
+          "cases": [
+            { "id": "dot", "name": "Dot", "pattern": "•", "moves": "F R U R' U' F'", "description": "Apply twice to get cross." },
+            { "id": "l-shape", "name": "L-Shape", "pattern": "┗", "moves": "F R U R' U' F'", "description": "Hold L in back-left corner." },
+            { "id": "line", "name": "Line", "pattern": "—", "moves": "F R U R' U' F'", "description": "Hold line horizontal." }
+          ]
+        },
+        {
+          "id": "oll-corner-sune",
+          "notation": "R U R' U R U2 R'",
+          "description": "Sune — orients 3 corners.",
+          "cases": [
+            { "id": "sune", "name": "Sune", "pattern": "🍍", "moves": "R U R' U R U2 R'", "description": "One corner already correct." },
+            { "id": "antisune", "name": "Anti-Sune", "pattern": "🍍'", "moves": "R U2 R' U' R U' R'", "description": "Mirror of Sune." },
+            { "id": "double-sune", "name": "Double Sune", "pattern": "海水", "moves": "R U R' U R U2 R' (×2)", "description": "Zero or four corners correct." },
+            { "id": "headlights", "name": "Headlights", "pattern": "👀", "moves": "R2 D R' U2 R D' R' U2 R'", "description": "Two adjacent corners need orientation." }
+          ]
+        }
+      ],
+      "prerequisite": "cfop-f2l"
+    },
+    {
+      "id": "cfop-oll-full",
+      "name": "OLL (Full)",
+      "method": "cfop",
+      "description": "Learn all 57 OLL cases for one-look last layer orientation.",
+      "order": 11,
+      "goal": "One algorithm to orient the entire last layer — no second step needed.",
+      "algorithms": [
+        {
+          "id": "oll-cross-sune",
+          "notation": "R U R' U R U2 R'",
+          "description": "Sune — the most common OLL case.",
+          "cases": [
+            { "id": "21", "name": "Sune", "pattern": "21", "moves": "R U R' U R U2 R'", "description": "Most common. One corner oriented." },
+            { "id": "22", "name": "Anti-Sune", "pattern": "22", "moves": "R U2 R' U' R U' R'", "description": "Mirror of Sune." },
+            { "id": "1", "name": "All Corners", "pattern": "1", "moves": "R U2 R2 F R F' U2 R' F R F'", "description": "No edges or corners oriented." },
+            { "id": "2", "name": "Knight Move", "pattern": "2", "moves": "r U R' U R U2 r'", "description": "Small Sune variation." }
+          ]
+        }
+      ],
+      "prerequisite": "cfop-oll-2look"
+    },
+    {
+      "id": "cfop-pll-2look",
+      "name": "PLL (2-Look)",
+      "method": "cfop",
+      "description": "Permute the last layer in two steps: corners first, then edges. Uses 6 algorithms instead of 21.",
+      "order": 12,
+      "goal": "Entire cube solved.",
+      "algorithms": [
+        {
+          "id": "pll-corner-adj",
+          "notation": "U R U' L' U R' U' L",
+          "description": "Adjacent corner swap (A-perm). Cycles 3 corners.",
+          "cases": [
+            { "id": "a-perm", "name": "A-Perm (adj)", "pattern": "⟲adj", "moves": "U R U' L' U R' U' L", "description": "Two adjacent corners need swapping." },
+            { "id": "e-perm", "name": "E-Perm", "pattern": "⟲opp", "moves": "x' R U' R' D R U R' D' R U R' D R U' R' D'", "description": "Two diagonal corners need swapping." }
+          ]
+        },
+        {
+          "id": "pll-edge-cycle",
+          "notation": "R U' R U R U R U' R' U' R2",
+          "description": "3-edge cycle (U-perm).",
+          "cases": [
+            { "id": "u-perm", "name": "U-Perm", "pattern": "→", "moves": "R U' R U R U R U' R' U' R2", "description": "Three edges cycle clockwise." },
+            { "id": "ua-perm", "name": "Ua-Perm", "pattern": "←", "moves": "R2 U R U R' U' R' U' R' U R'", "description": "Three edges cycle counter-clockwise." },
+            { "id": "h-perm", "name": "H-Perm", "pattern": "H", "moves": "M2 U M2 U2 M2 U M2", "description": "All four edges need swapping (opposite edges swap)." },
+            { "id": "z-perm", "name": "Z-Perm", "pattern": "Z", "moves": "M2 U M2 U M' U2 M2 U2 M' U2", "description": "Adjacent edges need swapping." }
+          ]
+        }
+      ],
+      "prerequisite": "cfop-oll-2look"
+    },
+    {
+      "id": "cfop-pll-full",
+      "name": "PLL (Full)",
+      "method": "cfop",
+      "description": "Learn all 21 PLL cases for one-look last layer permutation.",
+      "order": 13,
+      "goal": "One algorithm to permute the entire last layer — maximum solve speed.",
+      "algorithms": [
+        {
+          "id": "pll-g-perm",
+          "notation": "R2 U R' U R' U' R U' R2 D U' R' U R D'",
+          "description": "G-perm — one of the PLL cases with specific piece movements.",
+          "cases": [
+            { "id": "t-perm", "name": "T-Perm", "pattern": "T", "moves": "R U R' U' R' F R2 U' R' U' R U R' F'", "description": "Swap two adjacent corners and edges." },
+            { "id": "y-perm", "name": "Y-Perm", "pattern": "Y", "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'", "description": "Swap diagonal corners and adjacent edges." },
+            { "id": "j-perm", "name": "J-Perm", "pattern": "J", "moves": "R' U L' U2 R U' R' U2 R L", "description": "Swap two adjacent corners and the opposite edge." },
+            { "id": "f-perm", "name": "F-Perm", "pattern": "F", "moves": "R' U' F' R U R' F' R U R' U' R' F R2 U' R'", "description": "Swap two adjacent corners with complex edge movement." }
+          ]
+        }
+      ],
+      "prerequisite": "cfop-pll-2look"
+    }
+  ]
+}
