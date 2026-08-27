@@ -111,8 +111,8 @@ const Cubie: React.FC<CubieProps> = ({ position, faces, animating, animationAxis
 function getCubieFaces(state: CubeState, x: number, y: number, z: number): Partial<Record<FaceName, FaceColor>> {
   const faces: Partial<Record<FaceName, FaceColor>> = {};
 
-  if (y === 1) faces.U = state.U[2 - z + 1][x + 1];
-  if (y === -1) faces.D = state.D[z + 1][x + 1];
+  if (y === 1) faces.U = state.U[z + 1][x + 1];
+  if (y === -1) faces.D = state.D[1 - z][x + 1];
   if (z === 1) faces.F = state.F[y === 1 ? 0 : y === -1 ? 2 : 1][x + 1];
   if (z === -1) faces.B = state.B[y === 1 ? 0 : y === -1 ? 2 : 1][2 - (x + 1)];
   if (x === -1) faces.L = state.L[y === 1 ? 0 : y === -1 ? 2 : 1][z === 1 ? 2 : z === -1 ? 0 : 1];
