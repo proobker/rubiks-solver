@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BEGINNER_STAGES, CFOP_STAGES, type LearningStage, type Algorithm } from './stages';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { parseAlgorithm } from '@/features/engine/moves';
+import type { MoveString } from '@/shared/types/cube';
 
 interface StageCardProps {
   stage: LearningStage;
@@ -45,9 +46,12 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isActive, isCompleted, isL
 interface AlgorithmCardProps {
   algorithm: Algorithm;
   onApply: (notation: string) => void;
+  onStepMove: (move: MoveString) => void;
 }
 
-const AlgorithmCard: React.FC<AlgorithmCardProps> = ({ algorithm, onApply }) => {
+const AlgorithmCard: React.FC<AlgorithmCardProps> = ({ algorithm, onApply, onStepMove }) => {
+  const moves = useMemo(() => parseAlgorithm(algorithm.notation), [algorithm.notation]);
+
   return (
     <div className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
       <div className="flex items-center justify-between mb-2">
@@ -61,6 +65,25 @@ const AlgorithmCard: React.FC<AlgorithmCardProps> = ({ algorithm, onApply }) => 
           Apply
         </button>
       </div>
+
+      {moves.length > 1 && (
+        <div className="mb-2">
+          <p className="text-xs text-zinc-500 mb-1">Step through one move at a time:</p>
+          <div className="flex flex-wrap gap-1">
+            {moves.map((move, i) => (
+              <button
+                key={i}
+                onClick={() => onStepMove(move)}
+                className="text-xs px-1.5 py-0.5 font-mono bg-zinc-700 hover:bg-zinc-600 rounded transition-colors"
+                title={`Apply ${move}`}
+              >
+                {move}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="text-xs text-zinc-400">{algorithm.description}</p>
 
       {algorithm.cases && algorithm.cases.length > 0 && (
@@ -92,13 +115,17 @@ type MethodTab = 'beginner' | 'cfop';
 export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, onStageSelect }) => {
   const [method, setMethod] = useState<MethodTab>('beginner');
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
-  const { applyAlgorithm } = useCubeStore();
+  const { applyAlgorithm, applyMove } = useCubeStore();
 
   const stages = method === 'beginner' ? BEGINNER_STAGES : CFOP_STAGES;
 
   const handleApply = (notation: string) => {
     const moves = parseAlgorithm(notation);
     applyAlgorithm(moves);
+  };
+
+  const handleStepMove = (move: MoveString) => {
+    applyMove(move);
   };
 
   const isStageLocked = (stage: LearningStage) => {
@@ -174,7 +201,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
           <div className="space-y-2">
             <p className="text-xs font-medium text-zinc-300">Algorithms:</p>
             {activeStage.algorithms.map((algo) => (
-              <AlgorithmCard key={algo.id} algorithm={algo} onApply={handleApply} />
+              <AlgorithmCard key={algo.id} algorithm={algo} onApply={handleApply} onStepMove={handleStepMove} />
             ))}
           </div>
         )}
