@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
@@ -7,6 +7,7 @@ import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import type { Piece } from '@/features/engine/pieces';
 import { stickerFace, piecesOnFace } from '@/features/engine/pieces';
+import { orbitControlsRef, type OrbitHandle } from './orbit-ref';
 
 const CUBIE_SIZE = 0.93;
 const GAP = 0.06;
@@ -76,7 +77,11 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
         <Sticker key={s.key} color={s.color} position={s.position} rotation={s.rotation} />
       ))}
       {highlighted && highlightLabel && (
-        <Html position={[0, CUBIE_SIZE / 2 + 0.15, 0]} center>
+        <Html
+          position={[0, CUBIE_SIZE / 2 + 0.15, 0]}
+          center
+          zIndexRange={[-1, 0]}
+        >
           <div className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap pointer-events-none">
             {highlightLabel}
           </div>
@@ -164,19 +169,23 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
 
 interface RubiksCubeProps {
   highlights?: Map<number, { label?: string }>;
-  mode?: 'turn' | 'orbit';
-  onToggleMode?: () => void;
 }
 
-export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights, mode = 'turn', onToggleMode }) => {
+export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
+
+  const setControlsRef = useCallback(
+    (controls: unknown) => {
+      orbitControlsRef.current = controls as OrbitHandle | null;
+    },
+    [],
+  );
 
   return (
     <Canvas
       camera={{ position: [3, 3, 3], fov: 50 }}
       style={{ width: '100%', height: '100%' }}
-      onDoubleClick={mode === 'orbit' ? onToggleMode : undefined}
     >
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} intensity={0.8} />
@@ -185,7 +194,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights, mode = 'turn
       <AnimatedPieces highlights={highlights} />
 
       {isAnimating && currentAnimation && (
-        <Html center position={[0, -2.2, 0]}>
+        <Html center position={[0, -2.2, 0]} zIndexRange={[-1, 0]}>
           <div className="bg-black/80 text-white text-xl font-mono px-4 py-2 rounded-lg border-2 border-yellow-400/50 shadow-lg">
             {currentAnimation.move}
           </div>
@@ -193,12 +202,12 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights, mode = 'turn
       )}
 
       <OrbitControls
+        ref={setControlsRef}
         enableRotate={true}
-        enablePan={mode === 'orbit'}
+        enablePan={false}
         minDistance={4}
         maxDistance={12}
-        enableDamping
-        dampingFactor={0.05}
+        enableDamping={false}
       />
     </Canvas>
   );

@@ -7,6 +7,7 @@ import { DragRotate } from '@/features/cube/drag-rotate';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { getStageHighlights } from '@/features/learning/highlights';
 import { generateWCAScramble } from '@/features/engine/wca-scramble';
+import { preloadSolver } from '@/features/solver/preload';
 import type { MoveString } from '@/shared/types/cube';
 
 type Tab = 'moves' | 'learn' | 'solve';
@@ -16,10 +17,9 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('moves');
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
-  const [mode, setMode] = useState<'turn' | 'orbit'>('turn');
 
-  const handleToggleMode = useCallback(() => {
-    setMode((m) => (m === 'turn' ? 'orbit' : 'turn'));
+  useEffect(() => {
+    preloadSolver();
   }, []);
 
   const handleMove = useCallback((move: MoveString) => {
@@ -195,14 +195,11 @@ export const App: React.FC = () => {
         )}
         <div
           className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700"
-          onDoubleClick={mode === 'orbit' ? handleToggleMode : undefined}
         >
-          {mode === 'turn'
-            ? 'Drag to rotate faces · double-tap for orbit/pan'
-            : 'Orbit/pan mode · double-tap to turn faces'}
+          Drag to rotate faces · double-click + drag to orbit
         </div>
-        <RubiksCube highlights={highlights} mode={mode} onToggleMode={handleToggleMode} />
-        <DragRotate onMove={handleDragMove} onToggleMode={handleToggleMode} disabled={isAnimating} mode={mode} />
+        <RubiksCube highlights={highlights} />
+        <DragRotate onMove={handleDragMove} disabled={isAnimating} />
       </main>
     </div>
   );
