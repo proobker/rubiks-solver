@@ -1,17 +1,18 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
-import type { FaceName, FaceColor } from '@/shared/types/cube';
+import type { FaceName } from '@/shared/types/cube';
 import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import type { Piece } from '@/features/engine/pieces';
-import { stickerFace, piecesOnFace } from '@/features/engine/pieces';
-import { orbitControlsRef, type OrbitHandle } from './orbit-ref';
+import { piecesOnFace } from '@/features/engine/pieces';
 
-const CUBIE_SIZE = 0.93;
+const CUBIE_SIZE = 0.94;
 const GAP = 0.06;
 const SLOT = CUBIE_SIZE + GAP;
+
+const INTERIOR_COLOR = '#161616';
 
 const ANGLE_MAP: Record<number, number> = {
   1: -Math.PI / 2,
@@ -19,31 +20,14 @@ const ANGLE_MAP: Record<number, number> = {
   2: Math.PI,
 };
 
-interface StickerProps {
-  color: FaceColor;
-  position: [number, number, number];
-  rotation: [number, number, number];
-}
-
-const Sticker: React.FC<StickerProps> = ({ color, position, rotation }) => {
-  return (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[CUBIE_SIZE, CUBIE_SIZE]} />
-      <meshStandardMaterial color={COLOR_TO_HEX[color]} />
-    </mesh>
-  );
+const DIR_TO_SLOT: Record<string, number> = {
+  '1,0,0': 0,
+  '-1,0,0': 1,
+  '0,1,0': 2,
+  '0,-1,0': 3,
+  '0,0,1': 4,
+  '0,0,-1': 5,
 };
-
-function stickerPlacement(dir: [number, number, number]): { position: [number, number, number]; rotation: [number, number, number] } {
-  const half = CUBIE_SIZE / 2 + 0.001;
-  const [x, y, z] = dir;
-  if (y === 1) return { position: [0, half, 0], rotation: [-Math.PI / 2, 0, 0] };
-  if (y === -1) return { position: [0, -half, 0], rotation: [Math.PI / 2, 0, 0] };
-  if (z === 1) return { position: [0, 0, half], rotation: [0, 0, 0] };
-  if (z === -1) return { position: [0, 0, -half], rotation: [0, Math.PI, 0] };
-  if (x === -1) return { position: [-half, 0, 0], rotation: [0, -Math.PI / 2, 0] };
-  return { position: [half, 0, 0], rotation: [0, Math.PI / 2, 0] };
-}
 
 interface PieceMeshProps {
   piece: Piece;
@@ -52,12 +36,13 @@ interface PieceMeshProps {
 }
 
 const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabel }) => {
-  const stickers = useMemo(() => {
-    return piece.stickers.map((s) => {
-      const face = stickerFace(s.dir) ?? 'R';
-      const { position, rotation } = stickerPlacement(s.dir);
-      return { key: face, color: s.color, position, rotation };
-    });
+  const slotColors = useMemo<(string | null)[]>(() => {
+    const faces: (string | null)[] = [null, null, null, null, null, null];
+    for (const s of piece.stickers) {
+      const slot = DIR_TO_SLOT[`${s.dir[0]},${s.dir[1]},${s.dir[2]}`];
+      if (slot !== undefined) faces[slot] = COLOR_TO_HEX[s.color];
+    }
+    return faces;
   }, [piece.stickers]);
 
   return (
@@ -66,16 +51,18 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
     >
       <mesh>
         <boxGeometry args={[CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE]} />
-        <meshStandardMaterial
-          color={highlighted ? '#444444' : '#1a1a1a'}
-          roughness={0.3}
-          metalness={0.1}
-          emissive={highlighted ? '#333333' : '#000000'}
-        />
+        {slotColors.map((color, i) => (
+          <meshStandardMaterial
+            key={i}
+            attach={`material-${i}`}
+            color={color ?? INTERIOR_COLOR}
+            roughness={0.55}
+            metalness={0.05}
+            emissive={highlighted ? '#888888' : '#000000'}
+            emissiveIntensity={highlighted ? 0.35 : 0}
+          />
+        ))}
       </mesh>
-      {stickers.map((s) => (
-        <Sticker key={s.key} color={s.color} position={s.position} rotation={s.rotation} />
-      ))}
       {highlighted && highlightLabel && (
         <Html
           position={[0, CUBIE_SIZE / 2 + 0.15, 0]}
@@ -175,21 +162,15 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
 
-  const setControlsRef = useCallback(
-    (controls: unknown) => {
-      orbitControlsRef.current = controls as OrbitHandle | null;
-    },
-    [],
-  );
-
   return (
     <Canvas
-      camera={{ position: [3, 3, 3], fov: 50 }}
+      camera={{ position: [5.5, 5, 7], fov: 35 }}
+      dpr={[1, 2]}
       style={{ width: '100%', height: '100%' }}
     >
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 5, 5]} intensity={0.8} />
-      <directionalLight position={[-5, -5, -5]} intensity={0.3} />
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[5, 8, 5]} intensity={0.8} />
+      <directionalLight position={[-3, -2, -4]} intensity={0.25} />
 
       <AnimatedPieces highlights={highlights} />
 
@@ -202,7 +183,6 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
       )}
 
       <OrbitControls
-        ref={setControlsRef}
         enableRotate={true}
         enablePan={false}
         minDistance={4}

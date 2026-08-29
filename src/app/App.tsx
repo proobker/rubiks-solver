@@ -3,7 +3,6 @@ import { RubiksCube } from '@/features/cube/rubiks-cube';
 import { MovePanel } from '@/components/ui/move-button';
 import { LearningPanel } from '@/features/learning/learning-panel';
 import { SolvePanel } from '@/features/solver/solve-panel';
-import { DragRotate } from '@/features/cube/drag-rotate';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { getStageHighlights } from '@/features/learning/highlights';
 import { generateWCAScramble } from '@/features/engine/wca-scramble';
@@ -13,7 +12,7 @@ import type { MoveString } from '@/shared/types/cube';
 type Tab = 'moves' | 'learn' | 'solve';
 
 export const App: React.FC = () => {
-  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, isAnimating, applyScramble, scrambleMoves, pieces } = useCubeStore();
+  const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, applyScramble, scrambleMoves, pieces } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
@@ -24,10 +23,6 @@ export const App: React.FC = () => {
 
   const handleMove = useCallback((move: MoveString) => {
     applyMove(move);
-  }, [applyMove]);
-
-  const handleDragMove = useCallback((move: string) => {
-    applyMove(move as MoveString);
   }, [applyMove]);
 
   const handleWCAScramble = useCallback(async () => {
@@ -196,10 +191,9 @@ export const App: React.FC = () => {
         <div
           className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700"
         >
-          Drag to rotate faces · double-click + drag to orbit
+          Drag to orbit · use buttons to turn faces
         </div>
         <RubiksCube highlights={highlights} />
-        <DragRotate onMove={handleDragMove} disabled={isAnimating} />
       </main>
     </div>
   );
