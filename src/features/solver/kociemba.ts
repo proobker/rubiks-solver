@@ -1,4 +1,13 @@
-import type { CubeState, MoveString } from '@/shared/types/cube';
+import type { CubeState, MoveString, FaceColor } from '@/shared/types/cube';
+
+const COLOR_TO_FACE_LETTER: Record<FaceColor, string> = {
+  white: 'U',
+  yellow: 'D',
+  green: 'F',
+  blue: 'B',
+  orange: 'L',
+  red: 'R',
+};
 
 interface SolverModule {
   initSolver: () => void;
@@ -51,7 +60,7 @@ function stateToFlatString(state: CubeState): string {
   for (const face of faces) {
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        result += state[face][row][col][0].toUpperCase();
+        result += COLOR_TO_FACE_LETTER[state[face][row][col]];
       }
     }
   }
