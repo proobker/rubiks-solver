@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { BEGINNER_STAGES, CFOP_STAGES, type LearningStage, type Algorithm } from './stages';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { parseAlgorithm } from '@/features/engine/moves';
+import { getStageProgress } from './suggestions';
+import { MoveButton } from '@/components/ui/move-button';
 import type { MoveString } from '@/shared/types/cube';
 
 interface StageCardProps {
@@ -115,7 +117,7 @@ type MethodTab = 'beginner' | 'cfop';
 export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, onStageSelect }) => {
   const [method, setMethod] = useState<MethodTab>('beginner');
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
-  const { applyAlgorithm, applyMove } = useCubeStore();
+  const { applyAlgorithm, applyMove, pieces } = useCubeStore();
 
   const stages = method === 'beginner' ? BEGINNER_STAGES : CFOP_STAGES;
 
@@ -135,6 +137,11 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
 
   const defaultStage = stages[0];
   const activeStage = stages.find((s) => s.id === selectedStage.id) ?? defaultStage;
+
+  const suggestion = useMemo(
+    () => getStageProgress(activeStage.id, pieces),
+    [activeStage, pieces],
+  );
 
   const selectStage = (stage: LearningStage) => {
     setSelectedStage(stage);
@@ -196,6 +203,35 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
           <p className="text-xs font-medium text-zinc-300 mb-1">Goal:</p>
           <p className="text-xs text-zinc-400">{activeStage.goal}</p>
         </div>
+
+        {suggestion.max > 0 && (
+          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/30 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-green-300">Suggested move</p>
+              <p className="text-[10px] text-zinc-400">
+                Progress {suggestion.value}/{suggestion.max}
+              </p>
+            </div>
+            <div className="h-1.5 rounded-full bg-zinc-700/60 overflow-hidden mb-3">
+              <div
+                className="h-full bg-green-500 rounded-full transition-all duration-300"
+                style={{ width: `${(suggestion.value / suggestion.max) * 100}%` }}
+              />
+            </div>
+            {suggestion.value >= suggestion.max ? (
+              <p className="text-xs text-green-300">Stage complete — move on to the next stage!</p>
+            ) : suggestion.move ? (
+              <div className="flex items-center gap-3">
+                <MoveButton move={suggestion.move} onClick={applyMove} size="md" />
+                <p className="text-xs text-zinc-300">{suggestion.rationale}</p>
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-300">
+                No single move makes progress right now — try a setup move or look for a different white/yellow piece.
+              </p>
+            )}
+          </div>
+        )}
 
         {activeStage.algorithms.length > 0 && (
           <div className="space-y-2">
