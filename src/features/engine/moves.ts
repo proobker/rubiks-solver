@@ -102,9 +102,9 @@ const clockwiseCycle: Record<FaceName, (state: CubeState) => void> = {
     state.D[0][0] = state.F[0][0];
     state.D[1][0] = state.F[1][0];
     state.D[2][0] = state.F[2][0];
-    state.F[0][0] = temp[2];
+    state.F[0][0] = temp[0];
     state.F[1][0] = temp[1];
-    state.F[2][0] = temp[0];
+    state.F[2][0] = temp[2];
   },
   R: (state) => {
     const temp = [state.U[0][2], state.U[1][2], state.U[2][2]];

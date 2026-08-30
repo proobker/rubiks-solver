@@ -1,4 +1,5 @@
 import type { CubeState, MoveString, FaceColor } from '@/shared/types/cube';
+import { applyMoves, isSolved } from '@/features/engine/moves';
 
 const COLOR_TO_FACE_LETTER: Record<FaceColor, string> = {
   white: 'U',
@@ -101,7 +102,14 @@ export function solveCube(state: CubeState): Promise<MoveString[]> {
       }, SOLVE_TIMEOUT_MS);
 
       pending = {
-        resolve: (solution) => resolve(parseAlgorithm(solution)),
+        resolve: (solution) => {
+          const moves = parseAlgorithm(solution);
+          if (!isSolved(applyMoves(state, moves))) {
+            reject(new Error('Solver returned an invalid solution'));
+            return;
+          }
+          resolve(moves);
+        },
         reject,
         timer,
       };
