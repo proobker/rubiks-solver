@@ -40,6 +40,7 @@ interface CubeStore {
   moveQueue: PendingMove[];
   isAnimating: boolean;
   currentAnimation: PendingMove | null;
+  animationId: number;
   moveSpeed: number;
   solved: boolean;
   scrambleMoves: MoveString[];
@@ -71,23 +72,24 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
   moveQueue: [],
   isAnimating: false,
   currentAnimation: null,
+  animationId: 0,
   moveSpeed: 1,
   solved: true,
   scrambleMoves: [],
 
   applyMove: (move) => {
-    const { moveQueue, isAnimating } = get();
+    const { moveQueue, isAnimating, animationId } = get();
     const pending = parseMove(move);
 
     if (isAnimating || moveQueue.length > 0) {
       set({ moveQueue: [...moveQueue, pending] });
     } else {
-      set({ currentAnimation: pending, isAnimating: true });
+      set({ currentAnimation: pending, isAnimating: true, animationId: animationId + 1 });
     }
   },
 
   applyAlgorithm: (moves) => {
-    const { moveQueue, isAnimating } = get();
+    const { moveQueue, isAnimating, animationId } = get();
     const pendingMoves = moves.map(parseMove);
 
     if (isAnimating || moveQueue.length > 0) {
@@ -97,19 +99,20 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       set({
         currentAnimation: first,
         isAnimating: true,
+        animationId: animationId + 1,
         moveQueue: rest,
       });
     }
   },
 
   processNextMove: () => {
-    const { moveQueue } = get();
+    const { moveQueue, animationId } = get();
     if (moveQueue.length === 0) {
       set({ isAnimating: false, currentAnimation: null });
       return;
     }
     const [next, ...rest] = moveQueue;
-    set({ currentAnimation: next, moveQueue: rest });
+    set({ currentAnimation: next, moveQueue: rest, animationId: animationId + 1 });
   },
 
   onAnimationComplete: () => {
@@ -149,6 +152,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       solved: false,
       moveQueue: [],
       currentAnimation: null,
+      animationId: 0,
       isAnimating: false,
     });
   },
@@ -164,6 +168,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       solved: false,
       moveQueue: [],
       currentAnimation: null,
+      animationId: 0,
       isAnimating: false,
     });
   },
@@ -177,6 +182,7 @@ export const useCubeStore = create<CubeStore>((set, get) => ({
       scrambleMoves: [],
       moveQueue: [],
       currentAnimation: null,
+      animationId: 0,
       isAnimating: false,
     });
   },

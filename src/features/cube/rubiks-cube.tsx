@@ -118,6 +118,7 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
   const pieces = useCubeStore((s) => s.pieces);
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
+  const animationId = useCubeStore((s) => s.animationId);
   const onAnimationComplete = useCubeStore((s) => s.onAnimationComplete);
 
   const turningFace = isAnimating ? currentAnimation?.face : undefined;
@@ -143,7 +144,7 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
 
       {isAnimating && currentAnimation && slicePieces.length > 0 && (
         <AnimatedSlice
-          key={`${currentAnimation.face}-${currentAnimation.move}-${currentAnimation.direction}`}
+          key={`${currentAnimation.face}-${currentAnimation.move}-${currentAnimation.direction}-${animationId}`}
           face={currentAnimation.face}
           direction={currentAnimation.direction}
           slicePieces={slicePieces}
