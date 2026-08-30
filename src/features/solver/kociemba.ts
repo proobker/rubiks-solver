@@ -10,49 +10,60 @@ const COLOR_TO_FACE_LETTER: Record<FaceColor, string> = {
 };
 
 type WorkerResponse =
-  | { type: 'ready' }
   | { type: 'solve-result'; solution: string | null }
   | { type: 'error'; message: string };
 
-let solverWorker: Worker | null = null;
-let solverReady: Promise<void> | null = null;
+type PendingRequest = {
+  resolve: (solution: string) => void;
+  reject: (err: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
 
-function getWorker(): Worker {
-  if (!solverWorker) {
-    solverWorker = new Worker(new URL('./solver.worker.ts', import.meta.url), {
-      type: 'module',
-    });
-  }
-  return solverWorker;
+const SOLVE_TIMEOUT_MS = 20000;
+
+let solverWorker: Worker | null = null;
+let workerReady: Promise<void> | null = null;
+let pending: PendingRequest | null = null;
+
+function createWorker(): void {
+  solverWorker = new Worker(new URL('./solver.worker.ts', import.meta.url), {
+    type: 'module',
+  });
+
+  solverWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    if (!pending) return;
+    const { resolve, reject, timer } = pending;
+    pending = null;
+    clearTimeout(timer);
+    if (event.data.type === 'error') {
+      reject(new Error(event.data.message));
+      return;
+    }
+    const solution = event.data.solution;
+    if (!solution) {
+      reject(new Error('No solution found'));
+    } else {
+      resolve(solution);
+    }
+  };
+
+  solverWorker.onerror = (err: ErrorEvent) => {
+    if (!pending) return;
+    const { reject, timer } = pending;
+    pending = null;
+    clearTimeout(timer);
+    reject(new Error(err.message || 'Solver worker failed'));
+  };
 }
 
 export async function ensureSolver(): Promise<void> {
-  if (!solverReady) {
-    solverReady = new Promise<void>((resolve, reject) => {
-      const worker = getWorker();
-      const onMessage = (event: MessageEvent<WorkerResponse>) => {
-        if (event.data.type === 'ready') {
-          cleanup();
-          resolve();
-        } else if (event.data.type === 'error') {
-          cleanup();
-          reject(new Error(event.data.message));
-        }
-      };
-      const onError = (err: ErrorEvent) => {
-        cleanup();
-        reject(new Error(err.message || 'Solver worker failed'));
-      };
-      const cleanup = () => {
-        worker.removeEventListener('message', onMessage);
-        worker.removeEventListener('error', onError);
-      };
-      worker.addEventListener('message', onMessage);
-      worker.addEventListener('error', onError);
-      worker.postMessage({ type: 'ping' });
-    });
+  if (!workerReady) {
+    workerReady = (async () => {
+      if (!solverWorker) createWorker();
+      return undefined;
+    })();
   }
-  return solverReady;
+  return workerReady;
 }
 
 function stateToFlatString(state: CubeState): string {
@@ -75,32 +86,27 @@ function parseAlgorithm(algorithm: string): MoveString[] {
 export function solveCube(state: CubeState): Promise<MoveString[]> {
   return ensureSolver().then(() => {
     return new Promise<MoveString[]>((resolve, reject) => {
-      const worker = getWorker();
-      const onMessage = (event: MessageEvent<WorkerResponse>) => {
-        if (event.data.type === 'solve-result') {
-          cleanup();
-          const solution = event.data.solution;
-          if (!solution) {
-            reject(new Error('No solution found'));
-          } else {
-            resolve(parseAlgorithm(solution));
-          }
-        } else if (event.data.type === 'error') {
-          cleanup();
-          reject(new Error(event.data.message));
-        }
+      if (!solverWorker) {
+        reject(new Error('Solver worker unavailable'));
+        return;
+      }
+      if (pending) {
+        reject(new Error('A solve is already in progress'));
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        pending = null;
+        reject(new Error(`Solver timed out after ${SOLVE_TIMEOUT_MS / 1000}s`));
+      }, SOLVE_TIMEOUT_MS);
+
+      pending = {
+        resolve: (solution) => resolve(parseAlgorithm(solution)),
+        reject,
+        timer,
       };
-      const onError = (err: ErrorEvent) => {
-        cleanup();
-        reject(new Error(err.message || 'Solver worker failed'));
-      };
-      const cleanup = () => {
-        worker.removeEventListener('message', onMessage);
-        worker.removeEventListener('error', onError);
-      };
-      worker.addEventListener('message', onMessage);
-      worker.addEventListener('error', onError);
-      worker.postMessage({ type: 'solve', stateString: stateToFlatString(state) });
+
+      solverWorker.postMessage({ type: 'solve', stateString: stateToFlatString(state) });
     });
   });
 }
