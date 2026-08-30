@@ -18,9 +18,6 @@ export default defineConfig({
           if (id.includes('three') || id.includes('@react-three') || id.includes('@react-spring/three')) {
             return 'three';
           }
-          if (id.includes('rubik-solver')) {
-            return 'solver';
-          }
         },
       } as never,
     },

@@ -9,49 +9,50 @@ const COLOR_TO_FACE_LETTER: Record<FaceColor, string> = {
   red: 'R',
 };
 
-interface SolverModule {
-  initSolver: () => void;
-  solve: (cube: unknown, maxDepth?: number) => string | null;
-  scramble: (length?: number) => string;
-  Cube: { fromString: (str: string) => unknown };
-}
+type WorkerResponse =
+  | { type: 'ready' }
+  | { type: 'solve-result'; solution: string | null }
+  | { type: 'error'; message: string };
 
-let modulePromise: Promise<SolverModule> | null = null;
+let solverWorker: Worker | null = null;
+let solverReady: Promise<void> | null = null;
 
-function loadSolver(): Promise<SolverModule> {
-  if (!modulePromise) {
-    modulePromise = import('rubik-solver').then((mod) => mod as unknown as SolverModule);
+function getWorker(): Worker {
+  if (!solverWorker) {
+    solverWorker = new Worker(new URL('./solver.worker.ts', import.meta.url), {
+      type: 'module',
+    });
   }
-  return modulePromise;
+  return solverWorker;
 }
-
-let solverReady = false;
 
 export async function ensureSolver(): Promise<void> {
-  if (solverReady) return;
-  const mod = await loadSolver();
-  mod.initSolver();
-  solverReady = true;
-}
-
-const scrambleCache: MoveString[][] = [];
-const CACHE_TARGET = 5;
-
-function parseAlgorithm(algorithm: string): MoveString[] {
-  return algorithm.trim().split(/\s+/).filter(Boolean) as MoveString[];
-}
-
-export function takeCachedScramble(): MoveString[] | null {
-  if (scrambleCache.length === 0) return null;
-  return scrambleCache.shift() ?? null;
-}
-
-export async function refillScrambleCache(): Promise<void> {
-  if (!solverReady) return;
-  while (scrambleCache.length < CACHE_TARGET) {
-    const mod = await loadSolver();
-    scrambleCache.push(parseAlgorithm(mod.scramble()));
+  if (!solverReady) {
+    solverReady = new Promise<void>((resolve, reject) => {
+      const worker = getWorker();
+      const onMessage = (event: MessageEvent<WorkerResponse>) => {
+        if (event.data.type === 'ready') {
+          cleanup();
+          resolve();
+        } else if (event.data.type === 'error') {
+          cleanup();
+          reject(new Error(event.data.message));
+        }
+      };
+      const onError = (err: ErrorEvent) => {
+        cleanup();
+        reject(new Error(err.message || 'Solver worker failed'));
+      };
+      const cleanup = () => {
+        worker.removeEventListener('message', onMessage);
+        worker.removeEventListener('error', onError);
+      };
+      worker.addEventListener('message', onMessage);
+      worker.addEventListener('error', onError);
+      worker.postMessage({ type: 'ping' });
+    });
   }
+  return solverReady;
 }
 
 function stateToFlatString(state: CubeState): string {
@@ -67,20 +68,39 @@ function stateToFlatString(state: CubeState): string {
   return result;
 }
 
-export async function solveCube(state: CubeState): Promise<MoveString[]> {
-  await ensureSolver();
-  const mod = await loadSolver();
-  const stateString = stateToFlatString(state);
-  const cube = mod.Cube.fromString(stateString);
-  const solution = mod.solve(cube);
-  if (!solution) throw new Error('No solution found');
-  return parseAlgorithm(solution);
+function parseAlgorithm(algorithm: string): MoveString[] {
+  return algorithm.trim().split(/\s+/).filter(Boolean) as MoveString[];
 }
 
-export async function generateStateScramble(): Promise<MoveString[]> {
-  await ensureSolver();
-  const cached = takeCachedScramble();
-  if (cached) return cached;
-  const mod = await loadSolver();
-  return parseAlgorithm(mod.scramble());
+export function solveCube(state: CubeState): Promise<MoveString[]> {
+  return ensureSolver().then(() => {
+    return new Promise<MoveString[]>((resolve, reject) => {
+      const worker = getWorker();
+      const onMessage = (event: MessageEvent<WorkerResponse>) => {
+        if (event.data.type === 'solve-result') {
+          cleanup();
+          const solution = event.data.solution;
+          if (!solution) {
+            reject(new Error('No solution found'));
+          } else {
+            resolve(parseAlgorithm(solution));
+          }
+        } else if (event.data.type === 'error') {
+          cleanup();
+          reject(new Error(event.data.message));
+        }
+      };
+      const onError = (err: ErrorEvent) => {
+        cleanup();
+        reject(new Error(err.message || 'Solver worker failed'));
+      };
+      const cleanup = () => {
+        worker.removeEventListener('message', onMessage);
+        worker.removeEventListener('error', onError);
+      };
+      worker.addEventListener('message', onMessage);
+      worker.addEventListener('error', onError);
+      worker.postMessage({ type: 'solve', stateString: stateToFlatString(state) });
+    });
+  });
 }

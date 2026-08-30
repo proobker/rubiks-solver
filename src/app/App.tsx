@@ -25,9 +25,8 @@ export const App: React.FC = () => {
     applyMove(move);
   }, [applyMove]);
 
-  const handleWCAScramble = useCallback(async () => {
-    const moves = await generateWCAScramble();
-    applyScramble(moves);
+  const handleWCAScramble = useCallback(() => {
+    applyScramble(generateWCAScramble());
   }, [applyScramble]);
 
   const handleStageComplete = useCallback((stageId: string) => {
