@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BEGINNER_STAGES, CFOP_STAGES, type LearningStage, type Algorithm } from './stages';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { parseAlgorithm } from '@/features/engine/moves';
@@ -114,7 +114,11 @@ interface LearningPanelProps {
 
 type MethodTab = 'beginner' | 'cfop';
 
-export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, onStageSelect }) => {
+export const LearningPanel: React.FC<LearningPanelProps> = ({
+  completedStages,
+  onStageComplete,
+  onStageSelect,
+}) => {
   const [method, setMethod] = useState<MethodTab>('beginner');
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
   const { applyAlgorithm, applyMove, pieces } = useCubeStore();
@@ -142,6 +146,13 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
     () => getStageProgress(activeStage.id, pieces),
     [activeStage, pieces],
   );
+
+  const stageComplete = suggestion.max > 0 && suggestion.value >= suggestion.max;
+  useEffect(() => {
+    if (stageComplete && !completedStages.has(activeStage.id)) {
+      onStageComplete(activeStage.id);
+    }
+  }, [stageComplete, activeStage, completedStages, onStageComplete]);
 
   const selectStage = (stage: LearningStage) => {
     setSelectedStage(stage);
@@ -221,9 +232,34 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ completedStages, o
             {suggestion.value >= suggestion.max ? (
               <p className="text-xs text-green-300">Stage complete — move on to the next stage!</p>
             ) : suggestion.move ? (
-              <div className="flex items-center gap-3">
-                <MoveButton move={suggestion.move} onClick={applyMove} size="md" />
-                <p className="text-xs text-zinc-300">{suggestion.rationale}</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <MoveButton move={suggestion.move} onClick={applyMove} size="md" />
+                  <p className="text-xs text-zinc-300">{suggestion.rationale}</p>
+                </div>
+                {suggestion.moves.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 shrink-0">Best sequence:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {suggestion.moves.map((move, i) => (
+                        <button
+                          key={i}
+                          onClick={() => applyMove(move)}
+                          className="text-xs px-1.5 py-0.5 font-mono bg-zinc-700 hover:bg-zinc-600 rounded transition-colors"
+                          title={`Apply ${move}`}
+                        >
+                          {move}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => applyAlgorithm(suggestion.moves)}
+                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded transition-colors"
+                    >
+                      Apply all
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs text-zinc-300">

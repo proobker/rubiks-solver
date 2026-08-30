@@ -206,28 +206,86 @@ function dirOf(move: MoveString): 1 | -1 | 2 {
 
 export interface StageProgress {
   move: MoveString | null;
+  moves: MoveString[];
   delta: number;
   value: number;
   max: number;
   rationale: string;
 }
 
+const MAX_SEQUENCE_LENGTH = 3;
+
+function faceOf(move: MoveString): FaceName {
+  return move[0] as FaceName;
+}
+
+function isRedundant(seq: MoveString[], move: MoveString): boolean {
+  if (seq.length === 0) return false;
+  const prev = seq[seq.length - 1];
+  return faceOf(prev) === faceOf(move);
+}
+
+interface SearchState {
+  pieces: Piece[];
+  moves: MoveString[];
+}
+
 export function getStageProgress(stageId: string, pieces: Piece[]): StageProgress {
   const scorer = stageScorer(stageId);
   const current = scorer.value(pieces);
+  const rationale = RATIONALE[stageId] ?? RATIONALE.cfop;
 
-  let bestMove: MoveString | null = null;
-  let bestScore = current;
-
-  for (const move of ALL_MOVES) {
-    const next = applyMoveToPieces(pieces, FACE_TO_AXIS[move[0] as FaceName], dirOf(move));
-    const score = scorer.value(next);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
-    }
+  if (current >= scorer.max) {
+    return { move: null, moves: [], delta: 0, value: current, max: scorer.max, rationale };
   }
 
-  const rationale = RATIONALE[stageId] ?? RATIONALE.cfop;
-  return { move: bestMove, delta: bestScore - current, value: current, max: scorer.max, rationale };
+  const apply = (base: Piece[], move: MoveString): Piece[] =>
+    applyMoveToPieces(base, FACE_TO_AXIS[faceOf(move)], dirOf(move));
+
+  let bestSingle: MoveString | null = null;
+  let bestSingleScore = current;
+
+  let queue: SearchState[] = [{ pieces, moves: [] }];
+  for (let depth = 1; depth <= MAX_SEQUENCE_LENGTH && queue.length > 0; depth++) {
+    const nextLevel: SearchState[] = [];
+    for (const { pieces: base, moves } of queue) {
+      for (const move of ALL_MOVES) {
+        if (isRedundant(moves, move)) continue;
+
+        const next = apply(base, move);
+        const score = scorer.value(next);
+
+        if (depth === 1 && score > bestSingleScore) {
+          bestSingleScore = score;
+          bestSingle = move;
+        }
+
+        const seq = [...moves, move];
+        if (score === scorer.max) {
+          return {
+            move: seq[0],
+            moves: seq,
+            delta: scorer.max - current,
+            value: current,
+            max: scorer.max,
+            rationale,
+          };
+        }
+
+        if (depth < MAX_SEQUENCE_LENGTH) {
+          nextLevel.push({ pieces: next, moves: seq });
+        }
+      }
+    }
+    queue = nextLevel;
+  }
+
+  return {
+    move: bestSingle,
+    moves: bestSingle ? [bestSingle] : [],
+    delta: bestSingleScore - current,
+    value: current,
+    max: scorer.max,
+    rationale,
+  };
 }
