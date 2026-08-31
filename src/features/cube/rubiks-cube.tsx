@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { CameraControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
+import { DoubleSide, Quaternion, Vector3 } from 'three';
 import type { FaceName } from '@/shared/types/cube';
 import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
-import type { Piece } from '@/features/engine/pieces';
-import { piecesOnFace } from '@/features/engine/pieces';
+import type { AxisVec, Piece } from '@/features/engine/pieces';
+import { piecesOnFace, stickerColorOn } from '@/features/engine/pieces';
 
 export type CameraPresetName =
   | 'isometric'
@@ -37,6 +38,69 @@ const SLOT = CUBIE_SIZE + GAP;
 
 const INTERIOR_COLOR = '#161616';
 
+const PANEL_GAP = 1.9;
+const PANEL_CELL = SLOT;
+const STICKER_SIZE = 0.76;
+const PANEL_BACK_SIZE = PANEL_CELL * 3 + 0.1;
+
+const HIDDEN_FACES: { face: FaceName; normal: AxisVec }[] = [
+  { face: 'D', normal: [0, -1, 0] },
+  { face: 'B', normal: [0, 0, -1] },
+  { face: 'L', normal: [-1, 0, 0] },
+];
+
+function quaternionFromZTo(normal: AxisVec): Quaternion {
+  return new Quaternion().setFromUnitVectors(
+    new Vector3(0, 0, 1),
+    new Vector3(normal[0], normal[1], normal[2]),
+  );
+}
+
+interface RevealPanelsProps {
+  reveal?: boolean;
+}
+
+const RevealPanels: React.FC<RevealPanelsProps> = ({ reveal }) => {
+  const pieces = useCubeStore((s) => s.pieces);
+
+  if (!reveal) return null;
+
+  return (
+    <group>
+      {HIDDEN_FACES.map(({ face, normal }) => {
+        const q = quaternionFromZTo(normal);
+        const bx = normal[0] * (SLOT + PANEL_GAP);
+        const by = normal[1] * (SLOT + PANEL_GAP);
+        const bz = normal[2] * (SLOT + PANEL_GAP);
+        const facePieces = piecesOnFace(pieces, face);
+        return (
+          <group key={face}>
+            <mesh position={[bx, by, bz]} quaternion={q}>
+              <planeGeometry args={[PANEL_BACK_SIZE, PANEL_BACK_SIZE]} />
+              <meshBasicMaterial color="#0a0a0a" side={DoubleSide} />
+            </mesh>
+            {facePieces.map((p) => {
+              const color = stickerColorOn(p, face);
+              const x = p.position[0] * SLOT + normal[0] * (PANEL_GAP + 0.012);
+              const y = p.position[1] * SLOT + normal[1] * (PANEL_GAP + 0.012);
+              const z = p.position[2] * SLOT + normal[2] * (PANEL_GAP + 0.012);
+              return (
+                <mesh key={p.id} position={[x, y, z]} quaternion={q}>
+                  <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
+                  <meshBasicMaterial
+                    color={color ? COLOR_TO_HEX[color] : INTERIOR_COLOR}
+                    side={DoubleSide}
+                  />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+};
+
 const ANGLE_MAP: Record<number, number> = {
   1: -Math.PI / 2,
   '-1': Math.PI / 2,
@@ -56,10 +120,9 @@ interface PieceMeshProps {
   piece: Piece;
   highlighted?: boolean;
   highlightLabel?: string;
-  reveal?: boolean;
 }
 
-const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabel, reveal }) => {
+const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabel }) => {
   const slotColors = useMemo<(string | null)[]>(() => {
     const faces: (string | null)[] = [null, null, null, null, null, null];
     for (const s of piece.stickers) {
@@ -82,9 +145,6 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
             color={color ?? INTERIOR_COLOR}
             roughness={0.55}
             metalness={0.05}
-            transparent={reveal}
-            opacity={reveal ? 0.35 : 1}
-            depthWrite={!reveal}
             emissive={highlighted ? '#888888' : '#000000'}
             emissiveIntensity={highlighted ? 0.35 : 0}
           />
@@ -110,10 +170,9 @@ interface AnimatedSliceProps {
   direction: number;
   slicePieces: Piece[];
   onRest: () => void;
-  reveal?: boolean;
 }
 
-const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePieces, onRest, reveal }) => {
+const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePieces, onRest }) => {
   const moveSpeed = useCubeStore((s) => s.moveSpeed);
   const axis = FACE_TO_AXIS[face];
   const angle = ANGLE_MAP[direction];
@@ -132,7 +191,7 @@ const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePie
       rotation-z={springs.rotation.to((t) => axis[2] * t)}
     >
       {slicePieces.map((p) => (
-        <PieceMesh key={p.id} piece={p} reveal={reveal} />
+        <PieceMesh key={p.id} piece={p} />
       ))}
     </animated.group>
   );
@@ -140,10 +199,9 @@ const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePie
 
 interface AnimatedPiecesProps {
   highlights?: Map<number, { label?: string }>;
-  reveal?: boolean;
 }
 
-const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights, reveal }) => {
+const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
   const pieces = useCubeStore((s) => s.pieces);
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
@@ -167,7 +225,6 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights, reveal }) =
             piece={piece}
             highlighted={!!highlight}
             highlightLabel={highlight?.label}
-            reveal={reveal}
           />
         );
       })}
@@ -179,7 +236,6 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights, reveal }) =
           direction={currentAnimation.direction}
           slicePieces={slicePieces}
           onRest={onAnimationComplete}
-          reveal={reveal}
         />
       )}
     </group>
@@ -225,7 +281,9 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({
       <directionalLight position={[5, 8, 5]} intensity={0.8} />
       <directionalLight position={[-3, -2, -4]} intensity={0.25} />
 
-      <AnimatedPieces highlights={highlights} reveal={reveal} />
+      <AnimatedPieces highlights={highlights} />
+
+      <RevealPanels reveal={reveal} />
 
       {isAnimating && currentAnimation && (
         <Html center position={[0, -2.2, 0]} zIndexRange={[-1, 0]}>
