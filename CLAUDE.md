@@ -2,6 +2,8 @@
 
 Guidance for working in this Rubik's cube project (React + Three.js + Vite + TypeScript).
 
+For the deep technical reference (dual representation, animation pipeline, solver worker, learning engine, invariants), see [docs/architecture.md](docs/architecture.md).
+
 ## Commands
 
 - `npm run dev` — start Vite dev server
@@ -37,6 +39,21 @@ For the animation to be seamless (no snap on rest), the animated slice rotation 
 - `src/shared/types/cube.ts` — `FACE_TO_AXIS`, `FACE_TO_POSITION`, `COLOR_TO_HEX`, `SOLVED_STATE`, `MoveString`, `MoveDirection` (`1 | -1 | 2`).
 - Scramble generator (plain): `src/features/engine/scramble.ts`. Real WCA scrambles use the **`cubing` npm library** via `src/features/engine/wca-scramble.ts` (`generateWCAScramble()` → `randomScrambleForEvent('333')`), exposed through the `useWCAScramble()` hook in `src/features/engine/use-wca-scramble.ts` (it prefers a preloaded value from `preloadWCAScramble()`). `cubing` is GPL-licensed and code-splits into lazy chunks; only import it through `wca-scramble.ts`.
 
+## Solver
+
+- `src/features/solver/kociemba.ts` — client that manages a **web worker** (`solver.worker.ts`). It serializes the grid to a flat 54-char face-letters string (`stateToFlatString`, face order U R F D L B) and posts it to the worker, which runs the `rubik-solver` library (Kociemba two-phase) off the main thread.
+- `solver.worker.ts` — the worker module: `initSolver()` on load, replies with `solve-result` / `error`. `rubik-solver` only lives inside the worker; never import it on the main thread.
+- `kociemba.ts` `solveCube(state)` returns `Promise<MoveString[]>` with a **20s timeout** (`SOLVE_TIMEOUT_MS`), rejects if a solve is already in flight, and verifies the solution actually solves the input state before resolving. It enforces a single in-flight request.
+- `preload.ts` — `preloadSolver()` lazily spins up the worker once (called from `App` on mount) so the first Solve is fast.
+- `solve-panel.tsx` — "Solve" runs `solveCube(state)`; results render as `MoveButton`s and can be applied individually or all at once.
+
+## Learning
+
+- `src/features/learning/stages.ts` — `ALL_STAGES` loaded from `algorithms.json`; `BEGINNER_STAGES` (7) and `CFOP_STAGES` (6), each `LearningStage` with `id`, `method`, `order`, `prerequisite`, `goal`, and `algorithms` (notations + cases).
+- `src/features/learning/suggestions.ts` — `getStageProgress(stageId, pieces)` returns the best next move. It scores the current state per stage, then does a **greedy breadth-first search** up to `MAX_SEQUENCE_LENGTH = 3` moves over `ALL_MOVES` (skipping redundant same-axis moves) to find a move/sequence that increases the score, returning the first move plus the best sequence and a human rationale. The `SCORERS` map defines what "progress" means per stage (e.g. white edges matched to centers, yellow-on-top count).
+- `src/features/learning/highlights.ts` — `getStageHighlights(stageId, pieces)` returns `Map<pieceId, {label?}>` keyed by **piece id** (not slot) so highlights follow the physical piece.
+- `src/features/learning/learning-panel.tsx` — Learn tab UI: beginner/CFOP toggle, stage cards (locked until prerequisite complete), progress bar driven by `getStageProgress`, highlighted pieces via `getStageHighlights`, and algorithm cards that Apply or step through moves.
+
 ## Timer
 
 - `src/features/timer/timer-panel.tsx` — the Timer tab. Auto-times solves: the clock starts on the first applied move after a scramble (listening to store `history`) and stops when `solved`. Move count = `store.history.length`. Solve sessions persist under localStorage key `rubiks-solver:solve-sessions`. Uses `useWCAScramble()` for its "New Scramble" button.
@@ -51,7 +68,7 @@ For the animation to be seamless (no snap on rest), the animated slice rotation 
 ## Data flow / entry points
 
 - `src/app/App.tsx` — shell; owns the sidebar tabs (Moves / Learn / Solve / Timer), keyboard shortcuts (U D F B L R, Shift = prime), and persisted learning progress. Responsive: on mobile (`md:` breakpoint) the sidebar is hidden and a compact tab bar + bottom move keypad are shown; desktop keeps the sidebar. Camera preset buttons and the X-Ray reveal toggle overlay the canvas.
-- `src/features/cube/rubiks-cube.tsx` — renderer. Uses drei `CameraControls` (not `OrbitControls`); a ref-based `CameraApi.setPreset(name)` animates the camera to preset positions (isometric/front/back/left/right/top/bottom, target = origin). `CAMERA_PRESETS` holds positions; initial camera is `[5.5, 5, 7]`. The `reveal` prop makes cubie materials semi-transparent (`transparent`, `opacity: 0.35`, `depthWrite: false`) for x-ray / hidden-face reveal — it never clips geometry.
+- `src/features/cube/rubiks-cube.tsx` — renderer. Uses drei `CameraControls` (not `OrbitControls`); a ref-based `CameraApi.setPreset(name)` animates the camera to preset positions (isometric/front/back/left/right/top/bottom, target = origin). `CAMERA_PRESETS` holds positions; initial camera is `[5.5, 5, 7]`. The `reveal` prop renders `<RevealPanels>`: floating, borderless `DoubleSide` sticker panels (colored front and back, no backing) reconstructed from the piece model via `piecesOnFace` + `stickerColorOn`, with `quaternionFromZTo` orienting each panel toward its face normal. Panels are **camera-aware** — `useFrame` recomputes which faces are hidden (face hidden when `dot(camera.position, normal) < 0`) so mirrors appear for whichever faces the current view hides. **Do not** revert to semi-transparent cubies (the old `opacity`/`depthWrite` x-ray approach was removed).
 - `src/features/learning/highlights.ts` — `getStageHighlights(stageId, pieces)` returns a `Map<pieceId, {label?}>`. Highlight lookup is by **piece id**, not slot, so highlights follow the correct physical piece.
 - `src/features/learning/learning-panel.tsx`, `src/features/solver/solve-panel.tsx`, `src/features/timer/timer-panel.tsx`, `src/components/ui/move-button.tsx` — UI.
 
