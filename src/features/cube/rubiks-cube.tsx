@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
 import { DoubleSide, Quaternion, Vector3 } from 'three';
@@ -40,14 +40,26 @@ const INTERIOR_COLOR = '#161616';
 
 const PANEL_GAP = 1.9;
 const PANEL_CELL = SLOT;
-const STICKER_SIZE = 0.76;
-const PANEL_BACK_SIZE = PANEL_CELL * 3 + 0.1;
+const STICKER_SIZE = PANEL_CELL + 0.03;
 
-const HIDDEN_FACES: { face: FaceName; normal: AxisVec }[] = [
-  { face: 'D', normal: [0, -1, 0] },
-  { face: 'B', normal: [0, 0, -1] },
-  { face: 'L', normal: [-1, 0, 0] },
-];
+const FACE_NORMALS: Record<FaceName, AxisVec> = {
+  U: [0, 1, 0],
+  D: [0, -1, 0],
+  F: [0, 0, 1],
+  B: [0, 0, -1],
+  L: [-1, 0, 0],
+  R: [1, 0, 0],
+};
+
+const FACE_NAMES: FaceName[] = ['U', 'D', 'F', 'B', 'L', 'R'];
+
+const DEFAULT_HIDDEN: FaceName[] = FACE_NAMES.filter(
+  (f) =>
+    CAMERA_PRESETS.isometric[0] * FACE_NORMALS[f][0] +
+      CAMERA_PRESETS.isometric[1] * FACE_NORMALS[f][1] +
+      CAMERA_PRESETS.isometric[2] * FACE_NORMALS[f][2] <
+    0,
+);
 
 function quaternionFromZTo(normal: AxisVec): Quaternion {
   return new Quaternion().setFromUnitVectors(
@@ -62,28 +74,38 @@ interface RevealPanelsProps {
 
 const RevealPanels: React.FC<RevealPanelsProps> = ({ reveal }) => {
   const pieces = useCubeStore((s) => s.pieces);
+  const camera = useThree((s) => s.camera);
+  const [hidden, setHidden] = useState<FaceName[]>(DEFAULT_HIDDEN);
+  const hiddenKeyRef = useRef(DEFAULT_HIDDEN.join(''));
+
+  useFrame(() => {
+    if (!reveal) return;
+    const p = camera.position;
+    const next = FACE_NAMES.filter(
+      (f) => p.x * FACE_NORMALS[f][0] + p.y * FACE_NORMALS[f][1] + p.z * FACE_NORMALS[f][2] < 0,
+    );
+    const key = next.join('');
+    if (key !== hiddenKeyRef.current) {
+      hiddenKeyRef.current = key;
+      setHidden(next);
+    }
+  });
 
   if (!reveal) return null;
 
   return (
     <group>
-      {HIDDEN_FACES.map(({ face, normal }) => {
+      {hidden.map((face) => {
+        const normal = FACE_NORMALS[face];
         const q = quaternionFromZTo(normal);
-        const bx = normal[0] * (SLOT + PANEL_GAP);
-        const by = normal[1] * (SLOT + PANEL_GAP);
-        const bz = normal[2] * (SLOT + PANEL_GAP);
         const facePieces = piecesOnFace(pieces, face);
         return (
           <group key={face}>
-            <mesh position={[bx, by, bz]} quaternion={q}>
-              <planeGeometry args={[PANEL_BACK_SIZE, PANEL_BACK_SIZE]} />
-              <meshBasicMaterial color="#0a0a0a" side={DoubleSide} />
-            </mesh>
             {facePieces.map((p) => {
               const color = stickerColorOn(p, face);
-              const x = p.position[0] * SLOT + normal[0] * (PANEL_GAP + 0.012);
-              const y = p.position[1] * SLOT + normal[1] * (PANEL_GAP + 0.012);
-              const z = p.position[2] * SLOT + normal[2] * (PANEL_GAP + 0.012);
+              const x = p.position[0] * SLOT + normal[0] * PANEL_GAP;
+              const y = p.position[1] * SLOT + normal[1] * PANEL_GAP;
+              const z = p.position[2] * SLOT + normal[2] * PANEL_GAP;
               return (
                 <mesh key={p.id} position={[x, y, z]} quaternion={q}>
                   <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
