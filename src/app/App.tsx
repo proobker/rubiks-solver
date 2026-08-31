@@ -5,8 +5,9 @@ import { LearningPanel } from '@/features/learning/learning-panel';
 import { SolvePanel } from '@/features/solver/solve-panel';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import { getStageHighlights } from '@/features/learning/highlights';
-import { generateWCAScramble } from '@/features/engine/wca-scramble';
+import { generateScramble } from '@/features/engine/scramble';
 import { preloadSolver } from '@/features/solver/preload';
+import { useLocalStorage } from '@/lib/use-local-storage';
 import type { MoveString } from '@/shared/types/cube';
 
 type Tab = 'moves' | 'learn' | 'solve';
@@ -14,7 +15,14 @@ type Tab = 'moves' | 'learn' | 'solve';
 export const App: React.FC = () => {
   const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, applyScramble, scrambleMoves, pieces } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
-  const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
+  const [completedStageIds, setCompletedStageIds] = useLocalStorage<string[]>(
+    'rubiks-solver:completed-stages',
+    [],
+  );
+  const completedStages = useMemo<Set<string>>(
+    () => new Set(completedStageIds),
+    [completedStageIds],
+  );
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,12 +34,16 @@ export const App: React.FC = () => {
   }, [applyMove]);
 
   const handleWCAScramble = useCallback(() => {
-    applyScramble(generateWCAScramble());
+    applyScramble(generateScramble(25));
   }, [applyScramble]);
 
   const handleStageComplete = useCallback((stageId: string) => {
-    setCompletedStages((prev) => new Set([...prev, stageId]));
-  }, []);
+    setCompletedStageIds((prev) => (prev.includes(stageId) ? prev : [...prev, stageId]));
+  }, [setCompletedStageIds]);
+
+  const handleResetProgress = useCallback(() => {
+    setCompletedStageIds([]);
+  }, [setCompletedStageIds]);
 
   const handleStageSelect = useCallback((stageId: string) => {
     setSelectedStageId(stageId);
@@ -113,7 +125,7 @@ export const App: React.FC = () => {
                 <button
                   onClick={() => handleWCAScramble()}
                   className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg font-medium text-sm transition-colors"
-                  title="WCA-compliant state scramble"
+                  title="Longer 25-move scramble (WCA-style length)"
                 >
                   WCA Scramble
                 </button>
@@ -174,6 +186,7 @@ export const App: React.FC = () => {
               completedStages={completedStages}
               onStageComplete={handleStageComplete}
               onStageSelect={handleStageSelect}
+              onResetProgress={handleResetProgress}
             />
           )}
 

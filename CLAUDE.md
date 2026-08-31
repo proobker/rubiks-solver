@@ -35,12 +35,17 @@ For the animation to be seamless (no snap on rest), the animated slice rotation 
 
 - `src/features/engine/moves.ts` — a grid engine. `applyFaceTurn` implements a prime move (`direction: -1`) as **three clockwise turns** so that `'` is a true inverse (`X` then `X'` returns to solved). Keep this property; it is load-bearing for the solver and the piece model matching the grid.
 - `src/shared/types/cube.ts` — `FACE_TO_AXIS`, `FACE_TO_POSITION`, `COLOR_TO_HEX`, `SOLVED_STATE`, `MoveString`, `MoveDirection` (`1 | -1 | 2`).
-- Scramble generators: `src/features/engine/scramble.ts` and `src/features/engine/wca-scramble.ts`.
+- Scramble generator: `src/features/engine/scramble.ts`. (There is no separate WCA scrambler; the "WCA Scramble" button reuses `generateScramble`.)
+
+## Persistence
+
+- `moveSpeed` is persisted via zustand `persist` on `cube-store.ts` (`partialize` keeps only `moveSpeed`; the cube `state`/`pieces` are never serialized).
+- Completed learning stages persist via `src/lib/use-local-storage.ts` under the key `rubiks-solver:completed-stages` (a `string[]` of stage ids).
+- Reset progress clears that key and is surfaced in the Learn tab.
 
 ## Data flow / entry points
 
-- `src/app/App.tsx` — shell; owns the `turn`/`orbit` interaction mode and keyboard shortcuts (U D F B L R, Shift = prime).
-- `src/features/cube/drag-rotate.tsx` — transparent overlay. In `turn` mode a drag rotates a face; **double-tap** toggles between `turn` and `orbit` modes. In `orbit` mode the overlay is pointer-transparent so `OrbitControls` (in `rubiks-cube.tsx`) gets the events.
+- `src/app/App.tsx` — shell; owns the sidebar tabs (Moves / Learn / Solve), keyboard shortcuts (U D F B L R, Shift = prime), and persisted learning progress.
 - `src/features/learning/highlights.ts` — `getStageHighlights(stageId, pieces)` returns a `Map<pieceId, {label?}>`. Highlight lookup is by **piece id**, not slot, so highlights follow the correct physical piece.
 - `src/features/learning/learning-panel.tsx`, `src/features/solver/solve-panel.tsx`, `src/components/ui/move-button.tsx` — UI.
 

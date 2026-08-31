@@ -110,6 +110,7 @@ interface LearningPanelProps {
   completedStages: Set<string>;
   onStageComplete: (stageId: string) => void;
   onStageSelect?: (stageId: string) => void;
+  onResetProgress: () => void;
 }
 
 type MethodTab = 'beginner' | 'cfop';
@@ -118,6 +119,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   completedStages,
   onStageComplete,
   onStageSelect,
+  onResetProgress,
 }) => {
   const [method, setMethod] = useState<MethodTab>('beginner');
   const [selectedStage, setSelectedStage] = useState<LearningStage>(BEGINNER_STAGES[0]);
@@ -191,6 +193,15 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
             CFOP
           </button>
         </div>
+
+        {completedStages.size > 0 && (
+          <button
+            onClick={onResetProgress}
+            className="w-full mb-3 py-1 px-3 text-[10px] bg-zinc-800/60 hover:bg-zinc-700 rounded border border-zinc-700 text-zinc-400 transition-colors"
+          >
+            Reset progress
+          </button>
+        )}
 
         <div className="space-y-2">
           {stages.map((stage) => (

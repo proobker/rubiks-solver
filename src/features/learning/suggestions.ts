@@ -219,10 +219,12 @@ function faceOf(move: MoveString): FaceName {
   return move[0] as FaceName;
 }
 
+const AXIS: Record<FaceName, number> = { U: 1, D: 1, F: 2, B: 2, L: 0, R: 0 };
+
 function isRedundant(seq: MoveString[], move: MoveString): boolean {
   if (seq.length === 0) return false;
   const prev = seq[seq.length - 1];
-  return faceOf(prev) === faceOf(move);
+  return AXIS[faceOf(prev)] === AXIS[faceOf(move)];
 }
 
 interface SearchState {
