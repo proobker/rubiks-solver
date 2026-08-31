@@ -1,12 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { CameraControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
 import type { FaceName } from '@/shared/types/cube';
 import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import type { Piece } from '@/features/engine/pieces';
 import { piecesOnFace } from '@/features/engine/pieces';
+
+export type CameraPresetName =
+  | 'isometric'
+  | 'front'
+  | 'back'
+  | 'left'
+  | 'right'
+  | 'top'
+  | 'bottom';
+
+export interface CameraApi {
+  setPreset: (name: CameraPresetName) => void;
+}
+
+const CAMERA_PRESETS: Record<CameraPresetName, [number, number, number]> = {
+  isometric: [5.5, 5, 7],
+  front: [0, 0, 9],
+  back: [0, 0, -9],
+  left: [-9, 0, 0],
+  right: [9, 0, 0],
+  top: [0, 9, 0],
+  bottom: [0, -9, 0],
+};
 
 const CUBIE_SIZE = 0.94;
 const GAP = 0.06;
@@ -33,9 +56,10 @@ interface PieceMeshProps {
   piece: Piece;
   highlighted?: boolean;
   highlightLabel?: string;
+  reveal?: boolean;
 }
 
-const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabel }) => {
+const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabel, reveal }) => {
   const slotColors = useMemo<(string | null)[]>(() => {
     const faces: (string | null)[] = [null, null, null, null, null, null];
     for (const s of piece.stickers) {
@@ -58,6 +82,9 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
             color={color ?? INTERIOR_COLOR}
             roughness={0.55}
             metalness={0.05}
+            transparent={reveal}
+            opacity={reveal ? 0.35 : 1}
+            depthWrite={!reveal}
             emissive={highlighted ? '#888888' : '#000000'}
             emissiveIntensity={highlighted ? 0.35 : 0}
           />
@@ -83,9 +110,10 @@ interface AnimatedSliceProps {
   direction: number;
   slicePieces: Piece[];
   onRest: () => void;
+  reveal?: boolean;
 }
 
-const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePieces, onRest }) => {
+const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePieces, onRest, reveal }) => {
   const moveSpeed = useCubeStore((s) => s.moveSpeed);
   const axis = FACE_TO_AXIS[face];
   const angle = ANGLE_MAP[direction];
@@ -104,7 +132,7 @@ const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePie
       rotation-z={springs.rotation.to((t) => axis[2] * t)}
     >
       {slicePieces.map((p) => (
-        <PieceMesh key={p.id} piece={p} />
+        <PieceMesh key={p.id} piece={p} reveal={reveal} />
       ))}
     </animated.group>
   );
@@ -112,9 +140,10 @@ const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePie
 
 interface AnimatedPiecesProps {
   highlights?: Map<number, { label?: string }>;
+  reveal?: boolean;
 }
 
-const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
+const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights, reveal }) => {
   const pieces = useCubeStore((s) => s.pieces);
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
@@ -138,6 +167,7 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
             piece={piece}
             highlighted={!!highlight}
             highlightLabel={highlight?.label}
+            reveal={reveal}
           />
         );
       })}
@@ -149,6 +179,7 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
           direction={currentAnimation.direction}
           slicePieces={slicePieces}
           onRest={onAnimationComplete}
+          reveal={reveal}
         />
       )}
     </group>
@@ -157,11 +188,32 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
 
 interface RubiksCubeProps {
   highlights?: Map<number, { label?: string }>;
+  reveal?: boolean;
+  cameraApiRef?: React.MutableRefObject<CameraApi | null>;
 }
 
-export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
+export const RubiksCube: React.FC<RubiksCubeProps> = ({
+  highlights,
+  reveal,
+  cameraApiRef,
+}) => {
   const currentAnimation = useCubeStore((s) => s.currentAnimation);
   const isAnimating = useCubeStore((s) => s.isAnimating);
+  const controlsRef = useRef<CameraControls | null>(null);
+
+  const cameraApi = useMemo<CameraApi>(
+    () => ({
+      setPreset: (name) => {
+        const pos = CAMERA_PRESETS[name];
+        void controlsRef.current?.setLookAt(pos[0], pos[1], pos[2], 0, 0, 0, true);
+      },
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    if (cameraApiRef) cameraApiRef.current = cameraApi;
+  }, [cameraApiRef, cameraApi]);
 
   return (
     <Canvas
@@ -173,7 +225,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
       <directionalLight position={[5, 8, 5]} intensity={0.8} />
       <directionalLight position={[-3, -2, -4]} intensity={0.25} />
 
-      <AnimatedPieces highlights={highlights} />
+      <AnimatedPieces highlights={highlights} reveal={reveal} />
 
       {isAnimating && currentAnimation && (
         <Html center position={[0, -2.2, 0]} zIndexRange={[-1, 0]}>
@@ -183,12 +235,12 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({ highlights }) => {
         </Html>
       )}
 
-      <OrbitControls
-        enableRotate={true}
-        enablePan={false}
+      <CameraControls
+        makeDefault
+        ref={controlsRef}
+        smoothTime={0.25}
         minDistance={4}
         maxDistance={12}
-        enableDamping={false}
       />
     </Canvas>
   );
