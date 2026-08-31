@@ -40,7 +40,7 @@ const INTERIOR_COLOR = '#161616';
 
 const PANEL_GAP = 1.9;
 const PANEL_CELL = SLOT;
-const STICKER_SIZE = PANEL_CELL + 0.03;
+const STICKER_SIZE = PANEL_CELL - 0.08;
 
 const FACE_NORMALS: Record<FaceName, AxisVec> = {
   U: [0, 1, 0],
