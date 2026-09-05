@@ -34,6 +34,11 @@ export interface PendingMove {
   direction: 1 | -1 | 2;
 }
 
+export interface PracticeStart {
+  state: CubeState;
+  pieces: Piece[];
+}
+
 interface CubeStore {
   state: CubeState;
   pieces: Piece[];
@@ -45,6 +50,7 @@ interface CubeStore {
   moveSpeed: number;
   solved: boolean;
   scrambleMoves: MoveString[];
+  practiceStart: PracticeStart | null;
 
   applyMove: (move: MoveString) => void;
   applyAlgorithm: (moves: MoveString[]) => void;
@@ -56,6 +62,9 @@ interface CubeStore {
   undo: () => void;
   setMoveSpeed: (speed: number) => void;
   getInverseAlgorithm: () => MoveString[];
+  startPractice: () => void;
+  clearPractice: () => void;
+  resetToPracticeStart: () => void;
 }
 
 function parseMove(moveStr: MoveString): PendingMove {
@@ -79,6 +88,7 @@ export const useCubeStore = create<CubeStore>()(
       moveSpeed: 1,
       solved: true,
       scrambleMoves: [],
+      practiceStart: null,
 
       applyMove: (move) => {
         const { moveQueue, isAnimating, animationId } = get();
@@ -157,6 +167,7 @@ export const useCubeStore = create<CubeStore>()(
           currentAnimation: null,
           animationId: 0,
           isAnimating: false,
+          practiceStart: null,
         });
       },
 
@@ -173,6 +184,7 @@ export const useCubeStore = create<CubeStore>()(
           currentAnimation: null,
           animationId: 0,
           isAnimating: false,
+          practiceStart: null,
         });
       },
 
@@ -187,6 +199,7 @@ export const useCubeStore = create<CubeStore>()(
           currentAnimation: null,
           animationId: 0,
           isAnimating: false,
+          practiceStart: null,
         });
       },
 
@@ -215,6 +228,30 @@ export const useCubeStore = create<CubeStore>()(
             return `${move}'` as MoveString;
           })
           .reverse();
+      },
+
+      startPractice: () => {
+        const { state, pieces } = get();
+        set({
+          practiceStart: { state: cloneState(state), pieces: clonePieces(pieces) },
+        });
+      },
+
+      clearPractice: () => set({ practiceStart: null }),
+
+      resetToPracticeStart: () => {
+        const { practiceStart } = get();
+        if (!practiceStart) return;
+        set({
+          state: cloneState(practiceStart.state),
+          pieces: clonePieces(practiceStart.pieces),
+          history: [],
+          solved: isSolved(practiceStart.state),
+          moveQueue: [],
+          currentAnimation: null,
+          isAnimating: false,
+          animationId: 0,
+        });
       },
     }),
     {
