@@ -51,7 +51,7 @@ export const SolvePanel: React.FC = () => {
           <button
             onClick={handleSolve}
             disabled={isSolving || isAnimating}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(16,185,129,0.4)]"
+            className="flex-1 py-2 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:hover:bg-sky-600 rounded-lg font-medium text-sm transition-colors"
           >
             {isSolving ? 'Solving...' : 'Solve'}
           </button>
@@ -59,14 +59,14 @@ export const SolvePanel: React.FC = () => {
             <button
               onClick={handleApplyAll}
               disabled={isAnimating}
-              className="py-2 px-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(56,189,248,0.4)]"
+              className="py-2 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:hover:bg-sky-600 rounded-lg font-medium text-sm transition-colors"
             >
               Apply All
             </button>
           )}
           <button
             onClick={handleReset}
-            className="py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
+            className="py-2 px-4 bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg font-medium text-sm transition-colors"
           >
             Reset
           </button>
@@ -74,7 +74,7 @@ export const SolvePanel: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-sm">
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
           <p className="text-xs text-red-300">{error}</p>
         </div>
       )}

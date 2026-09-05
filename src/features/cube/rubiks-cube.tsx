@@ -178,7 +178,7 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
           center
           zIndexRange={[-1, 0]}
         >
-          <div className="bg-gradient-to-r from-sky-500 to-fuchsia-500 text-white text-[10px] px-2 py-0.5 rounded-lg font-bold whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(56,189,248,0.5)]">
+          <div className="bg-sky-600 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold whitespace-nowrap pointer-events-none">
             {highlightLabel}
           </div>
         </Html>
@@ -303,7 +303,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({
       <ambientLight intensity={0.65} />
       <directionalLight position={[5, 8, 5]} intensity={0.8} />
       <directionalLight position={[-3, -2, -4]} intensity={0.25} />
-      <directionalLight position={[-3, 2, -4]} intensity={0.5} color="#a855f7" />
+      <directionalLight position={[-3, 2, -4]} intensity={0.3} />
 
       <AnimatedPieces highlights={highlights} />
 
@@ -311,7 +311,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({
 
       {isAnimating && currentAnimation && (
         <Html center position={[0, -2.2, 0]} zIndexRange={[-1, 0]}>
-          <div className="bg-black/60 backdrop-blur-md text-white text-xl font-mono px-4 py-2 rounded-xl border-2 border-fuchsia-400/50 shadow-[0_0_24px_rgba(217,70,239,0.4)]">
+          <div className="bg-black/60 text-white text-xl font-mono px-4 py-2 rounded-lg border border-white/15">
             {currentAnimation.move}
           </div>
         </Html>

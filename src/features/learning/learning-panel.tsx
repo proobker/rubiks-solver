@@ -19,24 +19,24 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isActive, isCompleted, isL
     <button
       onClick={onSelect}
       disabled={isLocked}
-      className={`w-full text-left p-3 rounded-xl border backdrop-blur-sm transition-all ${
+      className={`w-full text-left p-3 rounded-lg border transition-colors ${
         isActive
-          ? 'border-sky-400/60 bg-gradient-to-r from-sky-500/20 to-violet-500/15 shadow-[0_0_20px_rgba(56,189,248,0.25)]'
+          ? 'border-sky-400/50 bg-sky-500/10'
           : isCompleted
             ? 'border-emerald-400/30 bg-emerald-400/5'
             : isLocked
-              ? 'border-white/5 bg-black/20 opacity-50 cursor-not-allowed'
-              : 'border-white/10 bg-black/20 hover:border-white/25 hover:bg-black/10'
+              ? 'border-white/[0.06] bg-white/[0.02] opacity-50 cursor-not-allowed'
+              : 'border-white/[0.08] bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]'
       }`}
     >
       <div className="flex items-center gap-2">
         <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
             isCompleted
-              ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white'
+              ? 'bg-emerald-500 text-white'
               : isActive
-                ? 'bg-gradient-to-br from-sky-400 to-violet-500 text-white'
-                : 'bg-black/40 text-zinc-300 border border-white/10'
+                ? 'bg-sky-500 text-white'
+                : 'bg-white/[0.06] border border-white/10 text-zinc-400'
           }`}
         >
           {isCompleted ? '✓' : stage.order - (stage.method === 'beginner' ? 0 : 7)}
@@ -66,30 +66,30 @@ const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
 
   return (
     <div
-      className={`p-4 rounded-xl border backdrop-blur-sm transition-all ${
+      className={`p-4 rounded-lg border transition-colors ${
         isPracticing
-          ? 'border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/10 to-violet-500/5 shadow-[0_0_24px_rgba(217,70,239,0.25)]'
-          : 'border-white/10 bg-black/20'
+          ? 'border-sky-400/50 bg-sky-500/10'
+          : 'border-white/[0.08] bg-white/[0.04]'
       }`}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
         <code className="text-sm font-mono bg-black/40 px-2 py-1 rounded text-amber-300 border border-white/10">
           {algorithm.notation}
         </code>
         <div className="flex gap-2">
           <button
             onClick={() => onPractice(algorithm.notation)}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
+            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
               isPracticing
-                ? 'bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white shadow-[0_0_14px_rgba(217,70,239,0.5)]'
-                : 'border border-fuchsia-400/40 text-fuchsia-300 hover:bg-fuchsia-500/15'
+                ? 'bg-sky-600 text-white hover:bg-sky-500'
+                : 'border border-sky-500/40 text-sky-400 hover:bg-sky-500/15'
             }`}
           >
             {isPracticing ? 'Practicing' : 'Practice'}
           </button>
           <button
             onClick={() => onApply(algorithm.notation)}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 text-white shadow-[0_0_14px_rgba(56,189,248,0.35)] transition-all"
+            className="text-xs px-3 py-1.5 rounded-md font-medium bg-sky-600 hover:bg-sky-500 text-white transition-colors"
           >
             Apply
           </button>
@@ -104,7 +104,7 @@ const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
               <button
                 key={i}
                 onClick={() => onStepMove(move)}
-                className="text-xs px-1.5 py-0.5 font-mono bg-black/40 hover:bg-sky-500/30 border border-white/10 rounded transition-colors"
+                className="text-xs px-1.5 py-0.5 font-mono bg-white/[0.04] hover:bg-sky-500/20 border border-white/10 rounded transition-colors"
                 title={`Apply ${move}`}
               >
                 {move}
@@ -157,14 +157,14 @@ const PracticeBar: React.FC<PracticeBarProps> = ({
   const done = stepIndex > 0 && remaining <= 0;
 
   return (
-    <div className="rounded-xl border border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-500/15 via-violet-500/10 to-sky-500/10 backdrop-blur-md p-4 shadow-[0_0_30px_rgba(217,70,239,0.25)]">
+    <div className="rounded-lg border border-sky-400/40 bg-sky-500/5 p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-fuchsia-300">
+        <p className="text-xs font-semibold uppercase tracking-widest text-sky-400">
           Practice
         </p>
         <button
           onClick={onExit}
-          className="text-[10px] px-2 py-1 rounded-md border border-white/10 bg-black/30 text-zinc-300 hover:text-white transition-colors"
+          className="text-[10px] px-2 py-1 rounded-md border border-white/10 bg-white/[0.04] text-zinc-400 hover:text-white transition-colors"
         >
           Exit
         </button>
@@ -179,10 +179,10 @@ const PracticeBar: React.FC<PracticeBarProps> = ({
               key={i}
               className={`text-[11px] font-mono px-1.5 py-0.5 rounded ${
                 i < stepIndex
-                  ? 'bg-fuchsia-500/40 text-white'
+                  ? 'bg-sky-600/60 text-white'
                   : i === stepIndex
                     ? 'bg-white text-black'
-                    : 'bg-black/30 text-zinc-400'
+                    : 'bg-white/[0.05] text-zinc-500'
               }`}
             >
               {m}
@@ -194,24 +194,24 @@ const PracticeBar: React.FC<PracticeBarProps> = ({
         <button
           onClick={onStep}
           disabled={done}
-          className="py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-500 disabled:opacity-40 text-white text-xs font-semibold shadow-[0_0_16px_rgba(217,70,239,0.4)] hover:brightness-110 transition-all"
+          className="py-2 rounded-md bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:hover:bg-sky-600 text-white text-xs font-medium transition-colors"
         >
           {done ? 'Done' : 'Step'}
         </button>
         <button
           onClick={onApplyAll}
-          className="py-2 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-semibold shadow-[0_0_16px_rgba(56,189,248,0.4)] hover:brightness-110 transition-all"
+          className="py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition-colors"
         >
           Apply all
         </button>
         <button
           onClick={onReset}
-          className="py-2 rounded-lg bg-black/30 border border-white/10 text-white text-xs font-semibold hover:bg-black/20 transition-colors"
+          className="py-2 rounded-md bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-xs font-medium transition-colors"
         >
           Reset start
         </button>
       </div>
-      <p className="text-[10px] text-zinc-400 mt-2 text-center">
+      <p className="text-[10px] text-zinc-500 mt-2 text-center">
         {done
           ? 'Done — hit "Reset start" to repeat until it is muscle memory.'
           : `${remaining} move${remaining === 1 ? '' : 's'} left. Step through or apply the whole algorithm, then reset to try again.`}
@@ -335,23 +335,23 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   return (
     <div className="flex flex-col gap-4 h-full">
       <div>
-        <div className="flex gap-1 bg-black/30 backdrop-blur-md p-1 rounded-xl border border-white/10 mb-3">
+        <div className="flex gap-0.5 bg-white/[0.04] border border-white/[0.06] p-0.5 rounded-lg mb-3">
           <button
             onClick={() => switchMethod('beginner')}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               method === 'beginner'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_0_14px_rgba(56,189,248,0.4)]'
-                : 'text-zinc-400 hover:text-zinc-100'
+                ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                : 'text-zinc-500 hover:text-zinc-200'
             }`}
           >
             Beginner
           </button>
           <button
             onClick={() => switchMethod('cfop')}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               method === 'cfop'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_0_14px_rgba(56,189,248,0.4)]'
-                : 'text-zinc-400 hover:text-zinc-100'
+                ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                : 'text-zinc-500 hover:text-zinc-200'
             }`}
           >
             CFOP
@@ -361,7 +361,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
         {completedStages.size > 0 && (
           <button
             onClick={onResetProgress}
-            className="w-full mb-3 py-1 px-3 text-[10px] bg-black/30 hover:bg-black/20 rounded-lg border border-white/10 text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="w-full mb-3 py-1 px-3 text-[10px] bg-white/[0.04] hover:bg-white/10 rounded-md border border-white/[0.08] text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             Reset progress
           </button>
@@ -381,40 +381,36 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-white/10 pt-4">
+      <div className="border-t border-white/[0.06] pt-4">
         <h3 className="text-sm font-semibold text-zinc-100 mb-2">{activeStage.name}</h3>
         <p className="text-xs text-zinc-400 mb-3">{activeStage.description}</p>
 
-        <div className="p-3 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm mb-3">
+        <div className="p-3 rounded-lg border border-white/[0.08] bg-white/[0.03] mb-3">
           <p className="text-xs font-medium text-zinc-200 mb-1">Goal:</p>
           <p className="text-xs text-zinc-400">{activeStage.goal}</p>
         </div>
 
         {suggestion.max > 0 && (
-          <div className="p-3 rounded-xl border border-emerald-400/30 bg-emerald-400/5 backdrop-blur-sm mb-3">
+          <div className="p-3 rounded-lg border border-emerald-400/20 bg-emerald-500/5 mb-3">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-emerald-300">Suggested move</p>
-              <p className="text-[10px] text-zinc-400">
+              <p className="text-xs font-semibold text-emerald-400">Suggested move</p>
+              <p className="text-[10px] text-zinc-500">
                 Progress {suggestion.value}/{suggestion.max}
               </p>
             </div>
-            <div className="h-1.5 rounded-full bg-black/40 overflow-hidden mb-3">
+            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  stageComplete
-                    ? 'bg-gradient-to-r from-emerald-400 to-teal-300'
-                    : 'bg-gradient-to-r from-emerald-400 to-sky-400'
-                }`}
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                 style={{ width: `${(suggestion.value / suggestion.max) * 100}%` }}
               />
             </div>
             {suggestion.value >= suggestion.max ? (
-              <p className="text-xs text-emerald-300">Stage complete — move on to the next stage!</p>
+              <p className="text-xs text-emerald-400">Stage complete — move on to the next stage!</p>
             ) : suggestion.move ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <MoveButton move={suggestion.move} onClick={applyMove} size="md" />
-                  <p className="text-xs text-zinc-300">{suggestion.rationale}</p>
+                  <p className="text-xs text-zinc-400">{suggestion.rationale}</p>
                 </div>
                 {suggestion.moves.length > 1 && (
                   <div className="flex items-center gap-2">
@@ -424,7 +420,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                         <button
                           key={i}
                           onClick={() => applyMove(move)}
-                          className="text-xs px-1.5 py-0.5 font-mono bg-black/40 hover:bg-emerald-500/30 border border-white/10 rounded transition-colors"
+                          className="text-xs px-1.5 py-0.5 font-mono bg-white/[0.04] hover:bg-emerald-500/20 border border-white/10 rounded transition-colors"
                           title={`Apply ${move}`}
                         >
                           {move}
@@ -433,7 +429,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                     </div>
                     <button
                       onClick={() => applyAlgorithm(suggestion.moves)}
-                      className="text-xs px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 rounded-lg text-white font-semibold transition-all"
+                      className="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 rounded-md text-white font-medium transition-colors"
                     >
                       Apply all
                     </button>
@@ -441,7 +437,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                 )}
               </div>
             ) : (
-              <p className="text-xs text-zinc-300">
+              <p className="text-xs text-zinc-400">
                 No single move makes progress right now — try a setup move or look for a different white/yellow piece.
               </p>
             )}
@@ -483,7 +479,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
           )}
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-black/20 backdrop-blur-md p-4 mt-4">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4 mt-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-semibold text-zinc-200">Free play</h4>
             <span className="text-[10px] text-zinc-500">turn the cube however you like</span>
@@ -491,19 +487,19 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
           <div className="flex gap-2 mb-3">
             <button
               onClick={() => scramble()}
-              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-semibold shadow-[0_0_16px_rgba(56,189,248,0.35)] hover:brightness-110 transition-all"
+              className="flex-1 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition-colors"
             >
               Scramble
             </button>
             <button
               onClick={undo}
-              className="flex-1 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-xs font-semibold hover:bg-black/20 transition-colors"
+              className="flex-1 py-2 rounded-md bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-xs font-medium transition-colors"
             >
               Undo
             </button>
             <button
               onClick={reset}
-              className="flex-1 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-xs font-semibold hover:bg-black/20 transition-colors"
+              className="flex-1 py-2 rounded-md bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-xs font-medium transition-colors"
             >
               Reset
             </button>

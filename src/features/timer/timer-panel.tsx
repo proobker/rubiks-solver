@@ -88,13 +88,13 @@ export const TimerPanel: React.FC = () => {
           <button
             onClick={() => void scrambleWCA()}
             disabled={wcaLoading}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(217,70,239,0.35)]"
+            className="flex-1 py-2 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:hover:bg-sky-600 rounded-lg font-medium text-sm transition-colors"
           >
             {wcaLoading ? 'Generating...' : 'New Scramble'}
           </button>
           <button
             onClick={reset}
-            className="flex-1 py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
+            className="flex-1 py-2 px-4 bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg font-medium text-sm transition-colors"
           >
             Reset
           </button>
@@ -102,7 +102,7 @@ export const TimerPanel: React.FC = () => {
       </div>
 
       {scrambleMoves.length > 0 && (
-        <div className="font-mono text-sm text-zinc-200 flex flex-wrap gap-1 bg-black/30 border border-white/10 p-2 rounded-lg">
+        <div className="font-mono text-sm text-zinc-200 flex flex-wrap gap-1 bg-white/[0.04] border border-white/[0.06] p-2 rounded-lg">
           {scrambleMoves.join(' ')}
         </div>
       )}
@@ -111,9 +111,7 @@ export const TimerPanel: React.FC = () => {
         <div className="text-center py-4">
           <div
             className={`font-mono text-5xl font-bold tabular-nums ${
-              solved
-                ? 'text-emerald-300 drop-shadow-[0_0_16px_rgba(16,185,129,0.5)]'
-                : 'text-zinc-100'
+              solved ? 'text-emerald-300' : 'text-zinc-100'
             }`}
           >
             {formatTime(elapsedMs)}
@@ -121,9 +119,7 @@ export const TimerPanel: React.FC = () => {
           <div className="text-sm text-zinc-400 mt-2">
             Moves: <span className="text-zinc-100 font-semibold">{historyCount}</span>
             {solved && (
-              <span className="ml-2 text-emerald-300 font-semibold drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
-                Solved!
-              </span>
+              <span className="ml-2 text-emerald-300 font-semibold">Solved!</span>
             )}
           </div>
         </div>
