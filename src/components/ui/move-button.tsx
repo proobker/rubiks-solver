@@ -11,12 +11,12 @@ interface MoveButtonProps {
 }
 
 const FACE_COLORS: Record<FaceName, string> = {
-  U: 'bg-white text-black border-gray-300',
-  D: 'bg-yellow-400 text-black border-yellow-500',
-  F: 'bg-green-500 text-white border-green-600',
-  B: 'bg-blue-500 text-white border-blue-600',
-  L: 'bg-orange-500 text-white border-orange-600',
-  R: 'bg-red-500 text-white border-red-600',
+  U: 'bg-gradient-to-br from-white via-slate-100 to-slate-300 text-zinc-900 border-white/70 shadow-[inset_0_2px_3px_rgba(255,255,255,0.8),0_0_14px_rgba(255,255,255,0.35)]',
+  D: 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-500 text-zinc-900 border-yellow-200/70 shadow-[inset_0_2px_3px_rgba(255,255,255,0.6),0_0_14px_rgba(250,204,21,0.45)]',
+  F: 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white border-green-300/60 shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_0_14px_rgba(34,197,94,0.5)]',
+  B: 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 text-white border-blue-300/60 shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_0_14px_rgba(59,130,246,0.5)]',
+  L: 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 text-white border-orange-300/60 shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_0_14px_rgba(249,115,22,0.5)]',
+  R: 'bg-gradient-to-br from-red-400 via-red-500 to-red-700 text-white border-red-300/60 shadow-[inset_0_2px_3px_rgba(255,255,255,0.4),0_0_14px_rgba(239,68,68,0.5)]',
 };
 
 export const MoveButton: React.FC<MoveButtonProps> = ({
@@ -40,7 +40,7 @@ export const MoveButton: React.FC<MoveButtonProps> = ({
       disabled={disabled}
       className={cn(
         'rounded-lg font-bold border-2 transition-all duration-150',
-        'hover:scale-105 active:scale-95',
+        'hover:scale-105 hover:brightness-110 active:scale-95',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
         FACE_COLORS[face],
         sizeClasses[size],

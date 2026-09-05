@@ -14,6 +14,9 @@ import type { MoveString, FaceName } from '@/shared/types/cube';
 
 type Tab = 'moves' | 'learn' | 'solve' | 'timer';
 
+const LOGO_CLASSES =
+  'w-6 h-6 rounded-lg bg-gradient-to-br from-red-400 via-green-400 to-blue-500 shadow-[0_0_16px_rgba(56,189,248,0.55)] animate-float-slow';
+
 export const App: React.FC = () => {
   const { applyMove, scramble, reset, undo, solved, moveSpeed, setMoveSpeed, scrambleMoves, pieces } = useCubeStore();
   const [activeTab, setActiveTab] = useState<Tab>('moves');
@@ -98,23 +101,38 @@ export const App: React.FC = () => {
   ];
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-zinc-950 text-white overflow-hidden">
-      <aside className="hidden md:flex w-72 border-r border-zinc-800 flex-col h-full">
-        <div className="p-4 border-b border-zinc-800">
+    <div className="h-screen flex flex-col md:flex-row text-white overflow-hidden">
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 animate-aurora bg-[linear-gradient(110deg,#05060f_0%,#0b1030_35%,#120a2e_70%,#05060f_100%)] bg-[length:300%_300%]" />
+        <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-sky-500/25 blur-[120px] animate-blob" />
+        <div
+          className="absolute top-1/3 -right-24 h-[28rem] w-[28rem] rounded-full bg-violet-600/25 blur-[130px] animate-blob"
+          style={{ animationDelay: '-8s' }}
+        />
+        <div
+          className="absolute -bottom-40 left-1/3 h-[26rem] w-[26rem] rounded-full bg-fuchsia-600/20 blur-[130px] animate-blob"
+          style={{ animationDelay: '-16s' }}
+        />
+      </div>
+
+      <aside className="hidden md:flex w-72 flex-col h-full relative z-10 bg-white/[0.04] backdrop-blur-2xl border-r border-white/10 shadow-[2px_0_40px_rgba(0,0,0,0.45)]">
+        <div className="p-4 border-b border-white/10 bg-black/10">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-red-500 via-green-500 to-blue-500" />
-            <h1 className="text-lg font-bold">Rubik's Solver</h1>
+            <div className={LOGO_CLASSES} />
+            <h1 className="text-lg font-bold bg-gradient-to-r from-sky-300 via-fuchsia-300 to-violet-300 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.45)]">
+              Rubik's Solver
+            </h1>
           </div>
 
-          <div className="flex gap-1 bg-zinc-800/50 p-1 rounded-lg">
+          <div className="flex gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors ${
+                className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all ${
                   activeTab === tab.id
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-gradient-to-r from-sky-500 to-violet-600 text-white shadow-[0_0_16px_rgba(99,102,241,0.45)]'
+                    : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 {tab.label}
@@ -129,14 +147,14 @@ export const App: React.FC = () => {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => scramble()}
-                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium text-sm transition-colors"
+                  className="w-full py-2 px-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(56,189,248,0.4)] hover:shadow-[0_0_28px_rgba(56,189,248,0.6)]"
                 >
                   Scramble
                 </button>
                 <button
                   onClick={() => handleWCAScramble()}
                   disabled={wcaLoading}
-                  className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg font-medium text-sm transition-colors"
+                  className="w-full py-2 px-4 bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(217,70,239,0.35)] hover:shadow-[0_0_28px_rgba(217,70,239,0.55)]"
                   title="Official WCA random-state scramble"
                 >
                   {wcaLoading ? 'Generating...' : 'WCA Scramble'}
@@ -144,22 +162,22 @@ export const App: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={reset}
-                    className="flex-1 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg font-medium text-sm transition-colors"
+                    className="flex-1 py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
                   >
                     Reset
                   </button>
                   <button
                     onClick={undo}
-                    className="flex-1 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg font-medium text-sm transition-colors"
+                    className="flex-1 py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
                   >
                     Undo
                   </button>
                 </div>
               </div>
 
-              <div className="border-t border-zinc-800 pt-4">
+              <div className="border-t border-white/10 pt-4">
                 <label className="text-xs text-zinc-400 block mb-2">
-                  Speed: {moveSpeed.toFixed(1)}x
+                  Speed: <span className="font-mono text-sky-300">{moveSpeed.toFixed(1)}x</span>
                 </label>
                 <input
                   type="range"
@@ -168,25 +186,25 @@ export const App: React.FC = () => {
                   step="0.1"
                   value={moveSpeed}
                   onChange={(e) => setMoveSpeed(parseFloat(e.target.value))}
-                  className="w-full accent-blue-500"
+                  className="w-full accent-sky-400"
                 />
               </div>
 
               {scrambleMoves.length > 0 && (
-                <div className="border-t border-zinc-800 pt-4">
+                <div className="border-t border-white/10 pt-4">
                   <p className="text-xs font-medium text-zinc-400 mb-2">Scramble:</p>
-                  <div className="font-mono text-sm text-zinc-300 flex flex-wrap gap-1 bg-zinc-800/50 p-2 rounded-lg">
+                  <div className="font-mono text-sm text-zinc-200 flex flex-wrap gap-1 bg-black/30 border border-white/10 p-2 rounded-lg">
                     {scrambleMoves.join(' ')}
                   </div>
                 </div>
               )}
 
-              <div className="border-t border-zinc-800 pt-4">
+              <div className="border-t border-white/10 pt-4">
                 <h2 className="text-xs font-medium text-zinc-400 mb-3">Moves</h2>
                 <MovePanel onMove={handleMove} />
               </div>
 
-              <div className="mt-auto border-t border-zinc-800 pt-4 text-xs text-zinc-500">
+              <div className="mt-auto border-t border-white/10 pt-4 text-xs text-zinc-500">
                 <p className="mb-1">Keyboard: U D F B L R</p>
                 <p>Shift + key = prime (')</p>
               </div>
@@ -208,21 +226,23 @@ export const App: React.FC = () => {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="md:hidden border-b border-zinc-800 px-3 py-2">
+      <div className="flex-1 flex flex-col min-h-0 relative z-10">
+        <div className="md:hidden border-b border-white/10 px-3 py-2 bg-black/20 backdrop-blur-xl">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-red-500 via-green-500 to-blue-500" />
-            <span className="font-bold text-sm">Rubik's Solver</span>
+            <div className={LOGO_CLASSES} />
+            <span className="font-bold text-sm bg-gradient-to-r from-sky-300 via-fuchsia-300 to-violet-300 bg-clip-text text-transparent">
+              Rubik's Solver
+            </span>
           </div>
-          <div className="flex gap-1 bg-zinc-800/50 p-1 rounded-lg">
+          <div className="flex gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-md transition-colors ${
+                className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all ${
                   activeTab === tab.id
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-gradient-to-r from-sky-500 to-violet-600 text-white shadow-[0_0_16px_rgba(99,102,241,0.45)]'
+                    : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 {tab.label}
@@ -233,21 +253,21 @@ export const App: React.FC = () => {
 
         <main className="relative flex-1 min-h-0">
           {solved && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-green-600/90 text-white px-4 py-2 rounded-lg font-medium shadow-lg">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-2 rounded-xl font-bold shadow-[0_0_28px_rgba(16,185,129,0.6)] backdrop-blur-md animate-float-slow">
               Solved!
             </div>
           )}
-          <div className="absolute top-4 right-4 z-10 bg-zinc-800/90 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 max-sm:hidden">
+          <div className="absolute top-4 right-4 z-10 bg-black/40 backdrop-blur-xl text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-white/10 max-sm:hidden">
             Drag to orbit · use buttons to turn faces
           </div>
           <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
-            <div className="flex gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg p-1">
+            <div className="flex gap-1 bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl p-1 shadow-[0_0_20px_rgba(0,0,0,0.4)]">
               {(['isometric', 'front', 'back', 'left', 'right', 'top', 'bottom'] as CameraPresetName[]).map(
                 (name) => (
                   <button
                     key={name}
                     onClick={() => handlePreset(name)}
-                    className="px-2 py-1 text-[10px] font-medium uppercase text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-md transition-colors"
+                    className="px-2 py-1 text-[10px] font-semibold uppercase text-zinc-300 hover:bg-sky-500/20 hover:text-white hover:shadow-[0_0_12px_rgba(56,189,248,0.4)] rounded-lg transition-all"
                   >
                     {name}
                   </button>
@@ -256,10 +276,10 @@ export const App: React.FC = () => {
             </div>
             <button
               onClick={() => setReveal((v) => !v)}
-              className={`self-start px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              className={`self-start px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                 reveal
-                  ? 'bg-indigo-600 text-white border-indigo-500'
-                  : 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-transparent shadow-[0_0_20px_rgba(99,102,241,0.6)]'
+                  : 'bg-black/40 backdrop-blur-xl text-zinc-300 border-white/10 hover:bg-black/30 hover:text-white'
               }`}
             >
               {reveal ? 'X-Ray: On' : 'X-Ray: Off'}
@@ -268,24 +288,24 @@ export const App: React.FC = () => {
           <RubiksCube highlights={highlights} reveal={reveal} cameraApiRef={cameraApiRef} />
         </main>
 
-        <div className="md:hidden border-t border-zinc-800 p-3 space-y-3">
+        <div className="md:hidden border-t border-white/10 p-3 space-y-3 bg-black/30 backdrop-blur-xl">
           <div className="flex gap-2">
             <button
               onClick={() => scramble()}
-              className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium text-sm transition-colors"
+              className="flex-1 py-2 px-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(56,189,248,0.4)]"
             >
               Scramble
             </button>
             <button
               onClick={() => handleWCAScramble()}
               disabled={wcaLoading}
-              className="flex-1 py-2 px-4 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg font-medium text-sm transition-colors"
+              className="flex-1 py-2 px-4 bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(217,70,239,0.35)]"
             >
               {wcaLoading ? 'Generating...' : 'WCA Scramble'}
             </button>
             <button
               onClick={undo}
-              className="flex-1 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg font-medium text-sm transition-colors"
+              className="flex-1 py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
             >
               Undo
             </button>
