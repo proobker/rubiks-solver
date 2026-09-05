@@ -42,7 +42,7 @@ export const SolvePanel: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-300 mb-2">Auto Solver</h2>
+        <h2 className="text-sm font-semibold text-zinc-100 mb-2">Auto Solver</h2>
         <p className="text-xs text-zinc-400 mb-3">
           Uses the Kociemba two-phase algorithm to find an optimal solution (typically 20 moves or fewer).
         </p>
@@ -51,7 +51,7 @@ export const SolvePanel: React.FC = () => {
           <button
             onClick={handleSolve}
             disabled={isSolving || isAnimating}
-            className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg font-medium text-sm transition-colors"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(16,185,129,0.4)]"
           >
             {isSolving ? 'Solving...' : 'Solve'}
           </button>
@@ -59,14 +59,14 @@ export const SolvePanel: React.FC = () => {
             <button
               onClick={handleApplyAll}
               disabled={isAnimating}
-              className="py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg font-medium text-sm transition-colors"
+              className="py-2 px-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-lg font-semibold text-sm transition-all shadow-[0_0_18px_rgba(56,189,248,0.4)]"
             >
               Apply All
             </button>
           )}
           <button
             onClick={handleReset}
-            className="py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg font-medium text-sm transition-colors"
+            className="py-2 px-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg font-semibold text-sm transition-all"
           >
             Reset
           </button>
@@ -74,8 +74,8 @@ export const SolvePanel: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <p className="text-xs text-red-400">{error}</p>
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl backdrop-blur-sm">
+          <p className="text-xs text-red-300">{error}</p>
         </div>
       )}
 
