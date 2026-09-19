@@ -17,7 +17,7 @@ An interactive 3D Rubik's cube built with React, Three.js, and TypeScript. Play 
 
 ## Live demo
 
-Deployed to GitHub Pages at **https://proobker.github.io/rubiks-solver/**
+Deployed to GitHub Pages at **https://rubiks.rabidahal.com.np**
 
 ## Tech stack
 

@@ -60,7 +60,7 @@ For the animation to be seamless (no snap on rest), the animated slice rotation 
 
 ## Persistence
 
-- Installed as a **PWA** via `vite-plugin-pwa` in `vite.config.ts` (`registerType: 'autoUpdate'`). Site base is `/rubiks-solver/` (GitHub Pages); `manifest`/`workbox.navigateFallback`/`scope`/`start_url` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`); keep them in sync with the manifest if you re-theme.
+- Installed as a **PWA** via `vite-plugin-pwa` in `vite.config.ts` (`registerType: 'autoUpdate'`). Site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); `manifest`/`workbox.navigateFallback`/`scope`/`start_url` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`); keep them in sync with the manifest if you re-theme.
 - `moveSpeed` is persisted via zustand `persist` on `cube-store.ts` (`partialize` keeps only `moveSpeed`; the cube `state`/`pieces` are never serialized).
 - Completed learning stages persist via `src/lib/use-local-storage.ts` under the key `rubiks-solver:completed-stages` (a `string[]` of stage ids).
 - Reset progress clears that key and is surfaced in the Learn tab.

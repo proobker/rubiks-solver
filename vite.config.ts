@@ -18,8 +18,8 @@ export default defineConfig({
         theme_color: '#09090b',
         background_color: '#09090b',
         display: 'standalone',
-        start_url: '/rubiks-solver/',
-        scope: '/rubiks-solver/',
+        start_url: '/',
+        scope: '/',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -28,8 +28,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,html,css,svg,png}'],
-        navigateFallback: '/rubiks-solver/index.html',
-        navigateFallbackDenylist: [/^\/rubiks-solver\/assets\/.*/],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/assets\/.*/],
       },
     }),
   ],
@@ -38,7 +38,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  base: '/rubiks-solver/',
+  optimizeDeps: {
+    exclude: ['cubing', 'cubing/scramble'],
+  },
+  base: '/',
   build: {
     rolldownOptions: {
       output: {
