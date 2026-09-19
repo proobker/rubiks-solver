@@ -70,8 +70,8 @@ The store (`src/shared/stores/cube-store.ts`) is a zustand store. Its mutable ce
 Relevant store fields:
 
 ```
-state, pieces, history, moveQueue, isAnimating,
-currentAnimation, animationId, moveSpeed, solved, scrambleMoves
+state, pieces, history, moveQueue, isAnimating, currentAnimation,
+animationId, moveSpeed, solved, scrambleMoves, practiceStart
 ```
 
 ### 2.1 Requesting a move
@@ -216,7 +216,7 @@ The Solve tab calls `solveCube(state)`; results render as a series of `MoveButto
 
 - `wca-scramble.ts` is the **only** module allowed to import `cubing/scramble`. `generateWCAScramble()` → `randomScrambleForEvent('333')`, parsed to `MoveString[]`.
 - `preloadWCAScramble()` pre-generates one scramble into a module-level `cached` variable.
-- `useWCA-scramble.ts` provides the `useWCAScramble()` hook: it prefers `takePreloadedWCAScramble()` (which consumes the cache) before falling back to `generateWCAScramble()`, then calls `applyScramble`.
+- `use-wca-scramble.ts` provides the `useWCAScramble()` hook: it prefers `takePreloadedWCAScramble()` (which consumes the cache) before falling back to `generateWCAScramble()`, then calls `applyScramble`.
 - `App` calls `preloadWCAScramble()` on mount. The plain (non-WCA) scramble is `scramble.ts` — a local generator that avoids repeating the same face and opposite-back-to-back pairs.
 
 ---
@@ -259,7 +259,7 @@ Auto-timing: the app considers a "solve" active when `history.length > 0 && !sol
 
 - **PWA**: `vite-plugin-pwa` in `vite.config.ts` with `registerType: 'autoUpdate'`. The site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); the manifest `scope`, `start_url`, and `workbox.navigateFallback` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`).
 - **Deploy**: `.github/workflows/deploy.yml` builds on `main` (`npm ci` + `npm run build`) and deploys `dist/` to GitHub Pages via the standard `actions/deploy-pages` flow.
-- **Code splitting**: `vite.config.ts` uses a `manualChunks` rule to push three.js + react-three + react-spring into a single `three` chunk. `cubing` splits into its own lazy chunks (see §7).
+- **Code splitting**: `vite.config.ts` uses a `manualChunks` rule (under `build.rolldownOptions.output`) that returns a single `three` chunk for ids containing `three`, `@react-three`, or `@react-spring/three`. `optimizeDeps.exclude` keeps `cubing`/`cubing/scramble` out of dev pre-bundling, and `cubing` splits into its own lazy chunks (see §7).
 
 ---
 
@@ -274,3 +274,5 @@ These are the load-bearing invariant rules to preserve when editing:
 5. **`rubik-solver` lives only in the web worker** — never import it on the main thread (§6.1).
 6. **`cubing` is only imported through `wca-scramble.ts`** — it is GPL and code-splits (§7).
 7. **Keep the x-ray as `RevealPanels`**, not semi-transparent cubies (§5.4).
+8. **Highlights are keyed by piece id, not slot** — highlighted pieces must follow the physical piece as it moves (§8.3).
+9. **The solver is single-in-flight with a 20s timeout** — `solveCube` rejects while a request is pending and never lets the worker hang indefinitely (§6.2).
