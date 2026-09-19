@@ -257,7 +257,7 @@ Auto-timing: the app considers a "solve" active when `history.length > 0 && !sol
 
 ## 10. PWA & deployment
 
-- **PWA**: `vite-plugin-pwa` in `vite.config.ts` with `registerType: 'autoUpdate'`. The site base is `/rubiks-solver/` (GitHub Pages); the manifest `scope`, `start_url`, and `workbox.navigateFallback` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`).
+- **PWA**: `vite-plugin-pwa` in `vite.config.ts` with `registerType: 'autoUpdate'`. The site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); the manifest `scope`, `start_url`, and `workbox.navigateFallback` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`).
 - **Deploy**: `.github/workflows/deploy.yml` builds on `main` (`npm ci` + `npm run build`) and deploys `dist/` to GitHub Pages via the standard `actions/deploy-pages` flow.
 - **Code splitting**: `vite.config.ts` uses a `manualChunks` rule to push three.js + react-three + react-spring into a single `three` chunk. `cubing` splits into its own lazy chunks (see §7).
 
