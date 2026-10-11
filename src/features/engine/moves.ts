@@ -1,4 +1,6 @@
-import type { CubeState, FaceName, Move, MoveDirection, MoveString, Face } from '@/shared/types/cube';
+import type { CubeState, FaceName, Move, MoveDirection, MoveSpec, MoveString, Face } from '@/shared/types/cube';
+import { FACE_NAMES, isFaceMove, moveBase, moveDirection, moveSpec } from '@/shared/types/cube';
+import { faceDir, faceletCell, faceletPosition, inMove, rotateVec, stickerFace } from './pieces';
 
 function cloneFace(face: Face): Face {
   return face.map(row => [...row]);
@@ -27,8 +29,6 @@ function rotateFaceCW(face: Face): Face {
   result[2][2] = face[0][2];
   return result;
 }
-
-
 
 const clockwiseCycle: Record<FaceName, (state: CubeState) => void> = {
   U: (state) => {
@@ -135,43 +135,61 @@ function applyFaceTurn(state: CubeState, face: FaceName, direction: MoveDirectio
   return result;
 }
 
-export function applyMove(state: CubeState, move: MoveString): CubeState {
-  const face = move[0] as FaceName;
-  let direction: MoveDirection = 1;
-  
-  if (move.includes("'")) {
-    direction = -1;
-  } else if (move.includes('2')) {
-    direction = 2;
+function applySpecGeometrically(state: CubeState, spec: MoveSpec): CubeState {
+  const result = cloneState(state);
+  for (const face of FACE_NAMES) {
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const position = faceletPosition(face, row, col);
+        if (!inMove(position, spec)) continue;
+        const nextFace = stickerFace(rotateVec(faceDir(face), spec));
+        if (!nextFace) continue;
+        const [nextRow, nextCol] = faceletCell(nextFace, rotateVec(position, spec));
+        result[nextFace][nextRow][nextCol] = state[face][row][col];
+      }
+    }
   }
-  
-  return applyFaceTurn(state, face, direction);
+  return result;
+}
+
+export function applyMove(state: CubeState, move: MoveString): CubeState {
+  if (isFaceMove(move)) {
+    return applyFaceTurn(state, moveBase(move) as FaceName, moveDirection(move));
+  }
+  return applySpecGeometrically(state, moveSpec(move));
 }
 
 export function applyMoves(state: CubeState, moves: MoveString[]): CubeState {
   return moves.reduce((currentState, move) => applyMove(currentState, move), state);
 }
 
+const MOVE_PATTERN = /^([UDFBLRudfblrMESxyz])(w?)(2'|'2|2|')?$/;
+
 export function parseMoveString(moveStr: string): MoveString {
-  const cleaned = moveStr.trim().toUpperCase();
-  if (cleaned.length === 0) throw new Error('Empty move string');
-  
-  const face = cleaned[0];
-  if (!['U', 'D', 'F', 'B', 'L', 'R'].includes(face)) {
-    throw new Error(`Invalid face: ${face}`);
-  }
-  
-  if (cleaned.length === 1) return face as MoveString;
-  if (cleaned.length === 2) {
-    if (cleaned[1] === "'") return `${face}'` as MoveString;
-    if (cleaned[1] === '2') return `${face}2` as MoveString;
-  }
-  
-  throw new Error(`Invalid move: ${cleaned}`);
+  const match = MOVE_PATTERN.exec(moveStr.trim().replace(/’/g, "'"));
+  if (!match) throw new Error(`Invalid move: ${moveStr}`);
+  const [, letter, wide, suffix = ''] = match;
+  if (wide && !'UDFBLR'.includes(letter)) throw new Error(`Invalid move: ${moveStr}`);
+  const base = wide ? letter.toLowerCase() : letter;
+  const dir = suffix === "'" ? "'" : suffix ? '2' : '';
+  return `${base}${dir}` as MoveString;
 }
 
 export function parseAlgorithm(algorithm: string): MoveString[] {
-  return algorithm.trim().split(/\s+/).map(parseMoveString);
+  const trimmed = algorithm.trim();
+  if (trimmed.length === 0) return [];
+  return trimmed.split(/\s+/).map(parseMoveString);
+}
+
+export function invertMove(move: MoveString): MoveString {
+  const base = moveBase(move);
+  const dir = moveDirection(move);
+  if (dir === 2) return `${base}2` as MoveString;
+  return (dir === 1 ? `${base}'` : base) as MoveString;
+}
+
+export function invertAlgorithm(moves: MoveString[]): MoveString[] {
+  return [...moves].reverse().map(invertMove);
 }
 
 export function moveToString(move: Move): MoveString {

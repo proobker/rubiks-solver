@@ -1,7 +1,7 @@
-import type { CubeState, FaceName, FaceColor, MoveDirection } from '@/shared/types/cube';
-import { SOLVED_STATE } from '@/shared/types/cube';
+import type { CubeState, FaceName, FaceColor, MoveDirection, MoveSpec, MoveString, Vec3 } from '@/shared/types/cube';
+import { SOLVED_STATE, moveSpec } from '@/shared/types/cube';
 
-export type AxisVec = [number, number, number];
+export type AxisVec = Vec3;
 
 export interface PieceSticker {
   dir: AxisVec;
@@ -73,57 +73,43 @@ function angleFor(direction: MoveDirection): number {
   return direction === 1 ? -Math.PI / 2 : Math.PI / 2;
 }
 
-function onSlice(position: [number, number, number], axis: AxisVec): boolean {
-  for (let i = 0; i < 3; i++) {
-    if (axis[i] !== 0) return position[i] === axis[i];
-  }
-  return false;
+function axisIndex(axis: AxisVec): number {
+  return axis[0] !== 0 ? 0 : axis[1] !== 0 ? 1 : 2;
+}
+
+export function inMove(position: AxisVec, spec: MoveSpec): boolean {
+  return spec.layers.includes(position[axisIndex(spec.axis)]);
 }
 
 function snap(v: [number, number, number]): [number, number, number] {
   return [Math.round(v[0]), Math.round(v[1]), Math.round(v[2])];
 }
 
-export function applyMoveToPieces(
-  pieces: Piece[],
-  axis: AxisVec,
-  direction: MoveDirection,
-): Piece[] {
-  let rotate: ((p: AxisVec, a: number) => AxisVec) | null = null;
-  let sign = 1;
+export function rotateVec(v: AxisVec, spec: MoveSpec): AxisVec {
+  const i = axisIndex(spec.axis);
+  const theta = angleFor(spec.direction) * spec.axis[i];
+  const rotate = i === 0 ? rotX : i === 1 ? rotY : rotZ;
+  return snap(rotate(v, theta));
+}
 
-  if (axis[0] !== 0) {
-    rotate = rotX;
-    sign = axis[0];
-  } else if (axis[1] !== 0) {
-    rotate = rotY;
-    sign = axis[1];
-  } else if (axis[2] !== 0) {
-    rotate = rotZ;
-    sign = axis[2];
-  }
-
-  if (!rotate) return clonePieces(pieces);
-
-  const theta = angleFor(direction) * sign;
+export function applyMoveToPieces(pieces: Piece[], spec: MoveSpec): Piece[] {
   const next = clonePieces(pieces);
-
   for (const piece of next) {
-    if (!onSlice(piece.position, axis)) continue;
-    piece.position = snap(rotate(piece.position, theta));
+    if (!inMove(piece.position, spec)) continue;
+    piece.position = rotateVec(piece.position, spec);
     for (const sticker of piece.stickers) {
-      sticker.dir = snap(rotate(sticker.dir, theta));
+      sticker.dir = rotateVec(sticker.dir, spec);
     }
   }
-
   return next;
 }
 
-export function applyMovesToPieces(
-  pieces: Piece[],
-  moves: Array<{ axis: AxisVec; direction: MoveDirection }>,
-): Piece[] {
-  return moves.reduce((current, { axis, direction }) => applyMoveToPieces(current, axis, direction), pieces);
+export function applyMovesToPieces(pieces: Piece[], moves: MoveString[]): Piece[] {
+  return moves.reduce((current, move) => applyMoveToPieces(current, moveSpec(move)), pieces);
+}
+
+export function piecesInMove(pieces: Piece[], spec: MoveSpec): Piece[] {
+  return pieces.filter((p) => inMove(p.position, spec));
 }
 
 const DIRS: AxisVec[] = [
@@ -167,3 +153,51 @@ export function hasAxis(dir: AxisVec): boolean {
   return DIRS.some((d) => sameVec(d, dir));
 }
 
+const FACE_DIR: Record<FaceName, AxisVec> = {
+  U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], B: [0, 0, -1], L: [-1, 0, 0], R: [1, 0, 0],
+};
+
+// Singmaster net layout: maps a grid cell (face, row, col) of CubeState to the
+// 3D slot holding that sticker. Must stay consistent with clockwiseCycle in moves.ts.
+export function faceletPosition(face: FaceName, row: number, col: number): AxisVec {
+  const a = row - 1;
+  const b = col - 1;
+  switch (face) {
+    case 'U': return [b, 1, a];
+    case 'D': return [b, -1, -a];
+    case 'F': return [b, -a, 1];
+    case 'B': return [-b, -a, -1];
+    case 'L': return [-1, -a, b];
+    case 'R': return [1, -a, -b];
+  }
+}
+
+export function faceletCell(face: FaceName, position: AxisVec): [number, number] {
+  const [x, y, z] = position;
+  switch (face) {
+    case 'U': return [z + 1, x + 1];
+    case 'D': return [1 - z, x + 1];
+    case 'F': return [1 - y, x + 1];
+    case 'B': return [1 - y, 1 - x];
+    case 'L': return [1 - y, z + 1];
+    case 'R': return [1 - y, 1 - z];
+  }
+}
+
+export function faceDir(face: FaceName): AxisVec {
+  return FACE_DIR[face];
+}
+
+export function piecesToState(pieces: Piece[]): CubeState {
+  const grid = (): FaceColor[][] => [0, 1, 2].map(() => ['white', 'white', 'white'] as FaceColor[]);
+  const state: CubeState = { U: grid(), D: grid(), F: grid(), B: grid(), L: grid(), R: grid() };
+  for (const piece of pieces) {
+    for (const sticker of piece.stickers) {
+      const face = stickerFace(sticker.dir);
+      if (!face) continue;
+      const [row, col] = faceletCell(face, piece.position);
+      state[face][row][col] = sticker.color;
+    }
+  }
+  return state;
+}

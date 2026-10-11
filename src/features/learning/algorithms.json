@@ -4,9 +4,14 @@
       "id": "white-cross",
       "name": "White Cross",
       "method": "beginner",
-      "description": "Form a white cross on the white face with correct edge colors matching the center pieces.",
+      "description": "Build a white cross whose edge colors also match the side centers. This step is intuitive: no algorithms, just planning.",
       "order": 1,
-      "goal": "The white face shows a + shape, and each edge piece matches the center color of the adjacent face.",
+      "goal": "All four white edges are home: white faces the white center and the other color matches its side center.",
+      "tips": [
+        "Centers never move relative to each other, so they tell you where every piece belongs.",
+        "Solve one edge at a time. Bring it to the face opposite its slot, line its side color up with the matching center, then turn that face twice.",
+        "Don't worry if the cross is on top or bottom — progress is measured relative to the centers."
+      ],
       "algorithms": [],
       "prerequisite": null
     },
@@ -14,19 +19,30 @@
       "id": "white-corners",
       "name": "White Corners",
       "method": "beginner",
-      "description": "Insert the four white corner pieces to complete the first layer.",
+      "description": "Hold the cross on the bottom (yellow on top) and insert the four white corners to finish the first layer.",
       "order": 2,
-      "goal": "The entire white face is complete, and the first layer side colors match their center pieces.",
+      "goal": "The whole white layer is solved, and its side colors match the centers.",
+      "tips": [
+        "Find a white corner in the top layer and turn U until it sits directly above the slot where its colors belong.",
+        "Turn the cube (y) so that slot is front-right, then repeat R U R' U' until the corner drops in solved.",
+        "A white corner stuck in the bottom layer in the wrong spot? Do R U R' U' once to lift it up."
+      ],
       "algorithms": [
         {
-          "id": "right-insert",
+          "id": "right-trigger",
+          "name": "Right trigger",
           "notation": "R U R' U'",
-          "description": "Insert a white corner from the bottom-right position into the top layer."
+          "repeat": 5,
+          "description": "With the corner above the front-right slot, repeat until the corner is solved (1–5 times).",
+          "recognition": "White corner in the top layer, directly above its front-right slot."
         },
         {
-          "id": "left-insert",
+          "id": "left-trigger",
+          "name": "Left trigger",
           "notation": "L' U' L U",
-          "description": "Insert a white corner from the bottom-left position into the top layer."
+          "repeat": 5,
+          "description": "Mirror of the right trigger, for a corner above the front-left slot.",
+          "recognition": "White corner in the top layer, directly above its front-left slot."
         }
       ],
       "prerequisite": "white-cross"
@@ -35,19 +51,29 @@
       "id": "middle-layer",
       "name": "Middle Layer Edges",
       "method": "beginner",
-      "description": "Insert the four middle layer edge pieces without disturbing the completed first layer.",
+      "description": "Keep yellow on top and insert the four middle edges without disturbing the white layer.",
       "order": 3,
-      "goal": "The first two layers (F2L) are complete — white face done and middle ring of colors matches centers.",
+      "goal": "The first two layers are complete: the white layer plus the middle ring all match their centers.",
+      "drill": true,
+      "tips": [
+        "Find a top-layer edge with no yellow. Turn U so its front color matches the front center (forming an upside-down T).",
+        "If its top color matches the right center, insert right; if it matches the left center, insert left.",
+        "An edge stuck in the middle layer upside down? Insert any top edge into that slot to pop it out."
+      ],
       "algorithms": [
         {
           "id": "insert-right",
+          "name": "Insert right",
           "notation": "U R U' R' U' F' U F",
-          "description": "Insert an edge piece from the top layer into the middle layer on the right side."
+          "description": "Moves the front-top edge into the front-right slot.",
+          "recognition": "Front color matches the front center; top color matches the right center."
         },
         {
           "id": "insert-left",
+          "name": "Insert left",
           "notation": "U' L' U L U F U' F'",
-          "description": "Insert an edge piece from the top layer into the middle layer on the left side."
+          "description": "Moves the front-top edge into the front-left slot.",
+          "recognition": "Front color matches the front center; top color matches the left center."
         }
       ],
       "prerequisite": "white-corners"
@@ -56,18 +82,38 @@
       "id": "yellow-cross",
       "name": "Yellow Cross",
       "method": "beginner",
-      "description": "Form a yellow cross on the yellow face (top).",
+      "description": "Orient the yellow edges to make a yellow cross on top. The corners don't matter yet.",
       "order": 4,
-      "goal": "The yellow face shows a + shape. Corner orientation does not matter yet.",
+      "goal": "The top face shows a yellow + (all four yellow edges face up).",
+      "drill": true,
       "algorithms": [
         {
           "id": "edge-flip",
+          "name": "Edge flip",
           "notation": "F R U R' U' F'",
-          "description": "Orients the yellow edges. Apply 1-3 times depending on the starting pattern.",
+          "description": "Flips two top edges. Hold the case as shown, then apply.",
           "cases": [
-            { "id": "dot", "name": "Dot", "pattern": "•", "moves": "F R U R' U' F' (×2-3)", "description": "No edges oriented — apply algorithm twice." },
-            { "id": "l-shape", "name": "L-Shape", "pattern": "┗", "moves": "F R U R' U' F'", "description": "Two adjacent edges oriented — hold L in top-left and apply once." },
-            { "id": "line", "name": "Line", "pattern": "—", "moves": "F R U R' U' F'", "description": "Two opposite edges oriented — hold line horizontal and apply once." }
+            {
+              "id": "line",
+              "name": "Line",
+              "moves": "F R U R' U' F'",
+              "description": "Two opposite edges are yellow. Hold the line horizontal and apply once.",
+              "recognition": "Yellow line through the center, left to right."
+            },
+            {
+              "id": "l-shape",
+              "name": "L-Shape",
+              "moves": "F R U R' U' R U R' U' F'",
+              "description": "Two adjacent edges are yellow. Hold the L at back-left and do the trigger twice inside F … F'.",
+              "recognition": "Yellow center plus the back and left edges."
+            },
+            {
+              "id": "dot",
+              "name": "Dot",
+              "moves": "F R U R' U' F' U2 F R U R' U' R U R' U' F'",
+              "description": "No edges are yellow. Do the line algorithm once to make an L, then solve the L.",
+              "recognition": "Only the center is yellow."
+            }
           ]
         }
       ],
@@ -77,17 +123,35 @@
       "id": "yellow-face",
       "name": "Yellow Face",
       "method": "beginner",
-      "description": "Orient all yellow stickers on the yellow face so the entire face is solid yellow.",
+      "description": "Twist the yellow corners so the whole top face is yellow, using Sune (and its mirror).",
       "order": 5,
-      "goal": "The entire yellow face is yellow. Side colors of the last layer may still be incorrect.",
+      "goal": "The entire top face is yellow. Side colors of the last layer may still be wrong.",
+      "drill": true,
+      "tips": [
+        "Exactly one corner yellow on top (a fish)? It's a Sune or Anti-Sune.",
+        "No yellow corners on top, or two? Do a Sune with a yellow sticker on the left side of the front-left corner — you'll get a fish next."
+      ],
       "algorithms": [
         {
           "id": "sune",
+          "name": "Sune",
           "notation": "R U R' U R U2 R'",
-          "description": "Orients corners. Apply 1-2 times with correct positioning.",
+          "description": "Twists three corners. Repeat with re-recognition until the face is yellow.",
           "cases": [
-            { "id": "sune", "name": "Sune", "pattern": "fish", "moves": "R U R' U R U2 R'", "description": "One corner oriented — hold the oriented corner at front-left." },
-            { "id": "antisune", "name": "Anti-Sune", "pattern": "fish-rev", "moves": "R U2 R' U' R U' R'", "description": "Mirror case — one corner oriented, different angle." }
+            {
+              "id": "sune",
+              "name": "Sune",
+              "moves": "R U R' U R U2 R'",
+              "description": "One corner yellow on top — put it front-left.",
+              "recognition": "Fish: one yellow corner on top; the front-right corner's yellow faces front."
+            },
+            {
+              "id": "anti-sune",
+              "name": "Anti-Sune",
+              "moves": "R U2 R' U' R U' R'",
+              "description": "Mirror fish — the yellow corner goes back-right.",
+              "recognition": "Fish: one yellow corner on top; the front-left corner's yellow faces front."
+            }
           ]
         }
       ],
@@ -97,14 +161,21 @@
       "id": "position-corners",
       "name": "Position Yellow Corners",
       "method": "beginner",
-      "description": "Move the yellow corner pieces to their correct positions (permutation).",
+      "description": "Swap the yellow corners into their correct spots while keeping the top face yellow.",
       "order": 6,
-      "goal": "Each yellow corner is in its correct position, though they may need to be twisted.",
+      "goal": "All four top corners are solved (their side colors match the centers).",
+      "tips": [
+        "Look for headlights: two corners on one side with the same color. Turn U to line them up with their center.",
+        "Hold the headlights at the back and apply the A-perm. No headlights? Apply it from any side, then look again."
+      ],
       "algorithms": [
         {
-          "id": "corner-cycle",
-          "notation": "U R U' L' U R' U' L",
-          "description": "Cycles three corners clockwise. Apply 1-2 times to position all corners."
+          "id": "a-perm",
+          "name": "A-perm",
+          "notation": "R' F R' B2 R F' R' B2 R2",
+          "repeat": 2,
+          "description": "Cycles three corners and keeps the yellow face intact. Headlights go at the back.",
+          "recognition": "Headlights (two matching corner stickers) on one side."
         }
       ],
       "prerequisite": "yellow-face"
@@ -113,17 +184,35 @@
       "id": "permute-edges",
       "name": "Permute Yellow Edges",
       "method": "beginner",
-      "description": "Cycle the yellow edge pieces to their final correct positions to complete the cube.",
+      "description": "Cycle the yellow edges into place to finish the cube.",
       "order": 7,
       "goal": "The entire cube is solved!",
+      "drill": true,
+      "tips": [
+        "Find the side whose edge is already solved (a full bar) and hold it at the back.",
+        "No solved side? Apply either U-perm from anywhere, then look again."
+      ],
       "algorithms": [
         {
-          "id": "edge-cycle",
+          "id": "u-perm",
+          "name": "U-perm",
           "notation": "R U' R U R U R U' R' U' R2",
-          "description": "Cycles three edges clockwise. Apply 1-2 times to solve.",
+          "description": "Cycles three edges. Solved bar at the back.",
           "cases": [
-            { "id": "clockwise", "name": "Clockwise", "pattern": "→", "moves": "R U' R U R U R U' R' U' R2", "description": "Three edges need clockwise rotation." },
-            { "id": "counter-clockwise", "name": "Counter-clockwise", "pattern": "←", "moves": "R2 U R U R' U' R' U' R' U R'", "description": "Three edges need counter-clockwise rotation." }
+            {
+              "id": "ua",
+              "name": "Ua-perm",
+              "moves": "R U' R U R U R U' R' U' R2",
+              "description": "Front edge needs to go left.",
+              "recognition": "Solved bar at the back; the front edge belongs on the left."
+            },
+            {
+              "id": "ub",
+              "name": "Ub-perm",
+              "moves": "R2 U R U R' U' R' U' R' U R'",
+              "description": "Front edge needs to go right.",
+              "recognition": "Solved bar at the back; the front edge belongs on the right."
+            }
           ]
         }
       ],
@@ -133,9 +222,13 @@
       "id": "cfop-cross",
       "name": "Efficient Cross",
       "method": "cfop",
-      "description": "Build the cross in 8 moves or fewer, with proper planning and color neutrality.",
+      "description": "Build the cross on the bottom in 8 moves or fewer, planning the whole thing during inspection.",
       "order": 8,
-      "goal": "Solve the cross in ≤8 moves with all edges correctly oriented to their centers.",
+      "goal": "All four cross edges solved, ideally in ≤8 moves, with the cross on the bottom.",
+      "tips": [
+        "Plan the first two edges before turning. Their relative position matters more than their absolute position.",
+        "Solving on the bottom means you can see F2L pieces right away."
+      ],
       "algorithms": [],
       "prerequisite": "permute-edges"
     },
@@ -143,29 +236,42 @@
       "id": "cfop-f2l",
       "name": "F2L (First Two Layers)",
       "method": "cfop",
-      "description": "Pair corner-edge pieces and insert them simultaneously. 41 algorithms total, but intuitive F2L is recommended first.",
+      "description": "Pair each white corner with its middle edge in the top layer, then insert the pair in one go.",
       "order": 9,
-      "goal": "All 4 F2L slots filled — first two layers complete in far fewer moves than beginner method.",
+      "goal": "All four F2L slots are filled.",
+      "drill": true,
+      "tips": [
+        "Learn F2L intuitively first: separate the pieces, pair them up with U moves, then insert.",
+        "Keep the slot you're working on at front-right where possible."
+      ],
       "algorithms": [
         {
           "id": "basic-pair-right",
+          "name": "Basic insert (right)",
           "notation": "U R U' R'",
-          "description": "Basic case: edge and corner already paired, insert with R trigger."
+          "description": "The pair is already connected in the top layer; insert it with an R trigger.",
+          "recognition": "Pair at back-top, white facing right."
         },
         {
           "id": "basic-pair-left",
+          "name": "Basic insert (left)",
           "notation": "U' L' U L",
-          "description": "Basic case: edge and corner already paired, insert with L trigger."
+          "description": "Mirror: insert a connected pair with an L trigger.",
+          "recognition": "Pair at back-top on the left, white facing left."
         },
         {
-          "id": "split-pair",
-          "notation": "U R U' R' U' F U F'",
-          "description": "Split a misaligned pair and insert using R and F triggers."
+          "id": "split-insert",
+          "name": "Split pair (right)",
+          "notation": "R U R' U' R U R' U'",
+          "description": "Corner and edge separated in the top layer: the trigger pairs them while inserting.",
+          "recognition": "Corner above the slot with white facing up."
         },
         {
-          "id": "3-cycle-pair",
-          "notation": "U' R U R' U R U' R'",
-          "description": "3-cycle approach for pairing separated corner and edge."
+          "id": "corner-in-slot",
+          "name": "Corner in slot",
+          "notation": "R U' R' U R U' R'",
+          "description": "Corner already in its slot; bring the edge in with paired triggers.",
+          "recognition": "Corner solved in the slot, edge in the top layer."
         }
       ],
       "prerequisite": "cfop-cross"
@@ -174,29 +280,35 @@
       "id": "cfop-oll-2look",
       "name": "OLL (2-Look)",
       "method": "cfop",
-      "description": "Orient the last layer in two steps: edges first, then corners. Uses 9 algorithms instead of 57.",
+      "description": "Orient the last layer in two looks: first make the yellow cross (3 cases), then orient corners (7 cases).",
       "order": 10,
-      "goal": "Entire yellow face is solid yellow.",
+      "goal": "The entire top face is yellow.",
+      "drill": true,
       "algorithms": [
         {
-          "id": "oll-edge-1",
+          "id": "oll-edges",
+          "name": "Edge orientation",
           "notation": "F R U R' U' F'",
-          "description": "Edge orientation: same as beginner yellow cross.",
+          "description": "First look: make the yellow cross.",
           "cases": [
-            { "id": "dot", "name": "Dot", "pattern": "•", "moves": "F R U R' U' F'", "description": "Apply twice to get cross." },
-            { "id": "l-shape", "name": "L-Shape", "pattern": "┗", "moves": "F R U R' U' F'", "description": "Hold L in back-left corner." },
-            { "id": "line", "name": "Line", "pattern": "—", "moves": "F R U R' U' F'", "description": "Hold line horizontal." }
+            { "id": "line", "name": "Line", "moves": "F R U R' U' F'", "description": "Hold the line horizontal.", "recognition": "Horizontal yellow line." },
+            { "id": "l-shape", "name": "L-Shape", "moves": "f R U R' U' f'", "description": "Hold the L at front-right.", "recognition": "Yellow front and right edges." },
+            { "id": "dot", "name": "Dot", "moves": "F R U R' U' F' f R U R' U' f'", "description": "Line then L, merged.", "recognition": "Only the center is yellow." }
           ]
         },
         {
-          "id": "oll-corner-sune",
+          "id": "oll-corners",
+          "name": "Corner orientation",
           "notation": "R U R' U R U2 R'",
-          "description": "Sune — orients 3 corners.",
+          "description": "Second look: orient the corners with the cross already done.",
           "cases": [
-            { "id": "sune", "name": "Sune", "pattern": "🍍", "moves": "R U R' U R U2 R'", "description": "One corner already correct." },
-            { "id": "antisune", "name": "Anti-Sune", "pattern": "🍍'", "moves": "R U2 R' U' R U' R'", "description": "Mirror of Sune." },
-            { "id": "double-sune", "name": "Double Sune", "pattern": "海水", "moves": "R U R' U R U2 R' (×2)", "description": "Zero or four corners correct." },
-            { "id": "headlights", "name": "Headlights", "pattern": "👀", "moves": "R2 D R' U2 R D' R' U2 R'", "description": "Two adjacent corners need orientation." }
+            { "id": "sune", "name": "Sune", "moves": "R U R' U R U2 R'", "description": "One yellow corner on top, at front-left.", "recognition": "Fish; front-right yellow faces front." },
+            { "id": "anti-sune", "name": "Anti-Sune", "moves": "R U2 R' U' R U' R'", "description": "One yellow corner on top, mirror fish (yellow corner at back-right).", "recognition": "Fish; front-left yellow faces front." },
+            { "id": "h", "name": "H", "moves": "R U R' U R U' R' U R U2 R'", "description": "No corners on top; yellow pairs face left and right.", "recognition": "Two pairs of headlights on opposite sides." },
+            { "id": "pi", "name": "Pi", "moves": "R U2 R2 U' R2 U' R2 U2 R", "description": "No corners on top; headlights on the left.", "recognition": "Headlights on one side, single yellows on both adjacent sides." },
+            { "id": "headlights", "name": "Headlights", "moves": "R2 D' R U2 R' D R U2 R", "description": "Two yellow corners on top at the front; headlights face the back.", "recognition": "Two adjacent yellow corners on top; the other two show headlights." },
+            { "id": "t", "name": "T (Chameleon)", "moves": "r U R' U' r' F R F'", "description": "Two yellow corners on top at the right; the left corners' yellows face front and back.", "recognition": "Two adjacent yellow corners on top; the other two point away from each other." },
+            { "id": "bowtie", "name": "Bowtie", "moves": "F' r U R' U' r' F R", "description": "Two diagonal corners on top.", "recognition": "Yellow corners diagonal on top." }
           ]
         }
       ],
@@ -206,19 +318,25 @@
       "id": "cfop-oll-full",
       "name": "OLL (Full)",
       "method": "cfop",
-      "description": "Learn all 57 OLL cases for one-look last layer orientation.",
+      "description": "Orient the whole last layer in one look. Start with the most common cases below; there are 57 in total.",
       "order": 11,
-      "goal": "One algorithm to orient the entire last layer — no second step needed.",
+      "goal": "One algorithm orients the entire last layer.",
+      "drill": true,
       "algorithms": [
         {
-          "id": "oll-cross-sune",
+          "id": "oll-common",
+          "name": "Common OLLs",
           "notation": "R U R' U R U2 R'",
-          "description": "Sune — the most common OLL case.",
+          "description": "A starter set of one-look OLLs.",
           "cases": [
-            { "id": "21", "name": "Sune", "pattern": "21", "moves": "R U R' U R U2 R'", "description": "Most common. One corner oriented." },
-            { "id": "22", "name": "Anti-Sune", "pattern": "22", "moves": "R U2 R' U' R U' R'", "description": "Mirror of Sune." },
-            { "id": "1", "name": "All Corners", "pattern": "1", "moves": "R U2 R2 F R F' U2 R' F R F'", "description": "No edges or corners oriented." },
-            { "id": "2", "name": "Knight Move", "pattern": "2", "moves": "r U R' U R U2 r'", "description": "Small Sune variation." }
+            { "id": "oll-1", "name": "OLL 1", "moves": "R U2 R2 F R F' U2 R' F R F'", "description": "Dot with no corners oriented.", "recognition": "Only the center is yellow; bars on left and right." },
+            { "id": "oll-2", "name": "OLL 2", "moves": "F R U R' U' F' f R U R' U' f'", "description": "Dot case.", "recognition": "Only the center is yellow." },
+            { "id": "oll-33", "name": "OLL 33", "moves": "R U R' U' R' F R F'", "description": "T-shape, shoelaces.", "recognition": "Yellow T across the middle." },
+            { "id": "oll-37", "name": "OLL 37 (Fish)", "moves": "F R' F' R U R U' R'", "description": "Fish shape.", "recognition": "Fish with two side yellows at front." },
+            { "id": "oll-44", "name": "OLL 44", "moves": "f R U R' U' f'", "description": "P-shape.", "recognition": "Yellow P shape." },
+            { "id": "oll-45", "name": "OLL 45", "moves": "F R U R' U' F'", "description": "T-shape.", "recognition": "Yellow T." },
+            { "id": "oll-51", "name": "OLL 51", "moves": "f R U R' U' R U R' U' f'", "description": "Line case with bars.", "recognition": "Horizontal line with no corners." },
+            { "id": "oll-57", "name": "OLL 57 (H)", "moves": "R U R' U' M' U R U' r'", "description": "All corners oriented, two edges not.", "recognition": "Yellow H shape." }
           ]
         }
       ],
@@ -228,28 +346,31 @@
       "id": "cfop-pll-2look",
       "name": "PLL (2-Look)",
       "method": "cfop",
-      "description": "Permute the last layer in two steps: corners first, then edges. Uses 6 algorithms instead of 21.",
+      "description": "Permute the last layer in two looks: corners first (2 cases), then edges (4 cases).",
       "order": 12,
-      "goal": "Entire cube solved.",
+      "goal": "The entire cube is solved.",
+      "drill": true,
       "algorithms": [
         {
-          "id": "pll-corner-adj",
-          "notation": "U R U' L' U R' U' L",
-          "description": "Adjacent corner swap (A-perm). Cycles 3 corners.",
+          "id": "pll-corners",
+          "name": "Corner permutation",
+          "notation": "R' F R' B2 R F' R' B2 R2",
+          "description": "First look: solve the corners.",
           "cases": [
-            { "id": "a-perm", "name": "A-Perm (adj)", "pattern": "⟲adj", "moves": "U R U' L' U R' U' L", "description": "Two adjacent corners need swapping." },
-            { "id": "e-perm", "name": "E-Perm", "pattern": "⟲opp", "moves": "x' R U' R' D R U R' D' R U R' D R U' R' D'", "description": "Two diagonal corners need swapping." }
+            { "id": "aa", "name": "A-perm (adjacent)", "moves": "R' F R' B2 R F' R' B2 R2", "description": "Headlights on one side — hold them at the back.", "recognition": "Exactly one side has headlights." },
+            { "id": "y", "name": "Y-perm (diagonal)", "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'", "description": "No headlights: swap two diagonal corners.", "recognition": "No side has headlights." }
           ]
         },
         {
-          "id": "pll-edge-cycle",
+          "id": "pll-edges",
+          "name": "Edge permutation",
           "notation": "R U' R U R U R U' R' U' R2",
-          "description": "3-edge cycle (U-perm).",
+          "description": "Second look: solve the edges.",
           "cases": [
-            { "id": "u-perm", "name": "U-Perm", "pattern": "→", "moves": "R U' R U R U R U' R' U' R2", "description": "Three edges cycle clockwise." },
-            { "id": "ua-perm", "name": "Ua-Perm", "pattern": "←", "moves": "R2 U R U R' U' R' U' R' U R'", "description": "Three edges cycle counter-clockwise." },
-            { "id": "h-perm", "name": "H-Perm", "pattern": "H", "moves": "M2 U M2 U2 M2 U M2", "description": "All four edges need swapping (opposite edges swap)." },
-            { "id": "z-perm", "name": "Z-Perm", "pattern": "Z", "moves": "M2 U M2 U M' U2 M2 U2 M' U2", "description": "Adjacent edges need swapping." }
+            { "id": "ua", "name": "Ua-perm", "moves": "R U' R U R U R U' R' U' R2", "description": "Solved bar at the back; three edges cycle.", "recognition": "One solved side; the front edge belongs left." },
+            { "id": "ub", "name": "Ub-perm", "moves": "R2 U R U R' U' R' U' R' U R'", "description": "Mirror of Ua.", "recognition": "One solved side; the front edge belongs right." },
+            { "id": "h", "name": "H-perm", "moves": "M2 U M2 U2 M2 U M2", "description": "Opposite edges swap.", "recognition": "Every side shows the opposite color in the middle." },
+            { "id": "z", "name": "Z-perm", "moves": "M' U M2 U M2 U M' U2 M2", "description": "Adjacent edges swap in pairs.", "recognition": "Every side shows an adjacent color in the middle." }
           ]
         }
       ],
@@ -259,19 +380,25 @@
       "id": "cfop-pll-full",
       "name": "PLL (Full)",
       "method": "cfop",
-      "description": "Learn all 21 PLL cases for one-look last layer permutation.",
+      "description": "Permute the whole last layer in one look. 21 cases in total; these are the most useful to learn first.",
       "order": 13,
-      "goal": "One algorithm to permute the entire last layer — maximum solve speed.",
+      "goal": "One algorithm solves the last layer.",
+      "drill": true,
       "algorithms": [
         {
-          "id": "pll-g-perm",
-          "notation": "R2 U R' U R' U' R U' R2 D U' R' U R D'",
-          "description": "G-perm — one of the PLL cases with specific piece movements.",
+          "id": "pll-common",
+          "name": "Common PLLs",
+          "notation": "R U R' U' R' F R2 U' R' U' R U R' F'",
+          "description": "A starter set of one-look PLLs.",
           "cases": [
-            { "id": "t-perm", "name": "T-Perm", "pattern": "T", "moves": "R U R' U' R' F R2 U' R' U' R U R' F'", "description": "Swap two adjacent corners and edges." },
-            { "id": "y-perm", "name": "Y-Perm", "pattern": "Y", "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'", "description": "Swap diagonal corners and adjacent edges." },
-            { "id": "j-perm", "name": "J-Perm", "pattern": "J", "moves": "R' U L' U2 R U' R' U2 R L", "description": "Swap two adjacent corners and the opposite edge." },
-            { "id": "f-perm", "name": "F-Perm", "pattern": "F", "moves": "R' U' F' R U R' F' R U R' U' R' F R2 U' R'", "description": "Swap two adjacent corners with complex edge movement." }
+            { "id": "t", "name": "T-perm", "moves": "R U R' U' R' F R2 U' R' U' R U R' F'", "description": "Swaps two adjacent corners and two opposite edges.", "recognition": "Headlights with a contrasting edge on one side; 2x1 blocks on both neighbours." },
+            { "id": "ja", "name": "Ja-perm", "moves": "R' U L' U2 R U' R' U2 R L", "description": "Swaps an adjacent corner pair and edge pair.", "recognition": "A 1x3 bar and a 2x1 block on adjacent sides." },
+            { "id": "jb", "name": "Jb-perm", "moves": "R U R' F' R U R' U' R' F R2 U' R'", "description": "Mirror of Ja.", "recognition": "A 1x3 bar on the left and a 2x1 block in front-right." },
+            { "id": "ra", "name": "Ra-perm", "moves": "R U' R' U' R U R D R' U' R D' R' U2 R'", "description": "Headlights with a split edge.", "recognition": "Headlights with a contrasting edge between." },
+            { "id": "f", "name": "F-perm", "moves": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R", "description": "Swaps two corners and two edges on one side.", "recognition": "One full 1x3 bar and no other solved blocks." },
+            { "id": "y", "name": "Y-perm", "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'", "description": "Swaps diagonal corners and two edges.", "recognition": "No headlights; two 2x1 blocks." },
+            { "id": "e", "name": "E-perm", "moves": "x' R U' R' D R U R' D' R U R' D R U' R' D' x", "description": "Swaps two pairs of corners; no headlights anywhere.", "recognition": "No headlights and no blocks on any side." },
+            { "id": "ga", "name": "Ga-perm", "moves": "R2 U R' U R' U' R U' R2 U' D R' U R D'", "description": "Three corners and three edges cycle.", "recognition": "Headlights with a 2x1 block on an adjacent side." }
           ]
         }
       ],

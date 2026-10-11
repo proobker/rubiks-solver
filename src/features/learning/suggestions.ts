@@ -1,293 +1,243 @@
+import type { MoveString } from '@/shared/types/cube';
+import { ALL_MOVES, moveBase } from '@/shared/types/cube';
 import type { Piece } from '@/features/engine/pieces';
-import { pieceAt, stickerColorOn, applyMoveToPieces } from '@/features/engine/pieces';
-import { ALL_MOVES, FACE_TO_AXIS } from '@/shared/types/cube';
-import type { MoveString, FaceName } from '@/shared/types/cube';
+import type { Facelets } from './facelets';
+import {
+  COLORS,
+  EDGE_SLOTS,
+  WHITE,
+  applyFaceletMoves,
+  applyPerm,
+  movePerm,
+  piecesToFacelets,
+  slotHas,
+  slotSolved,
+  topColor,
+} from './facelets';
+import type { StageGoal } from './stage-goals';
+import { STAGE_GOALS } from './stage-goals';
+import type { DrillItem } from './stages';
+import { stageById, stageItems } from './stages';
 
-type Slot = [number, number, number];
-type FacePair = [FaceName, FaceName];
+export type HintStepKind = 'rotate' | 'auf' | 'alg' | 'moves';
 
-const CENTER_BY_FACE: Record<FaceName, string> = {
-  U: 'white',
-  D: 'yellow',
-  F: 'green',
-  B: 'blue',
-  R: 'red',
-  L: 'orange',
-};
+export interface HintStep {
+  kind: HintStepKind;
+  moves: MoveString[];
+  label: string;
+}
 
-const U_EDGE_SLOTS: Slot[] = [
-  [0, 1, 1],
-  [0, 1, -1],
-  [1, 1, 0],
-  [-1, 1, 0],
-];
-const U_EDGE_SIDE: Record<string, FaceName> = {
-  '0,1,1': 'F',
-  '0,1,-1': 'B',
-  '1,1,0': 'R',
-  '-1,1,0': 'L',
-};
+export type HintStatus = 'done' | 'prereq' | 'reorient' | 'hint' | 'stuck';
 
-const U_CORNER_SLOTS: Slot[] = [
-  [1, 1, 1],
-  [-1, 1, 1],
-  [1, 1, -1],
-  [-1, 1, -1],
-];
-const U_CORNER_FACES: Record<string, FacePair> = {
-  '1,1,1': ['F', 'R'],
-  '-1,1,1': ['F', 'L'],
-  '1,1,-1': ['B', 'R'],
-  '-1,1,-1': ['B', 'L'],
-};
+export interface StageHint {
+  status: HintStatus;
+  steps: HintStep[];
+  explanation: string;
+  gain: number;
+}
 
-const MID_SLOTS: Slot[] = [
-  [1, 0, 1],
-  [-1, 0, 1],
-  [1, 0, -1],
-  [-1, 0, -1],
-];
-const MID_FACES: Record<string, FacePair> = {
-  '1,0,1': ['R', 'F'],
-  '-1,0,1': ['L', 'F'],
-  '1,0,-1': ['R', 'B'],
-  '-1,0,-1': ['L', 'B'],
-};
+const OPPOSITE_AXIS: Record<string, string> = { U: 'D', D: 'U', F: 'B', B: 'F', L: 'R', R: 'L' };
+const SEARCH_DEPTH = 5;
+const NODE_LIMIT = 1_500_000;
 
-function whiteCross(pieces: Piece[]): number {
-  let score = 0;
-  for (const [x, y, z] of U_EDGE_SLOTS) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    const side = U_EDGE_SIDE[`${x},${y},${z}`];
-    if (stickerColorOn(piece, 'U') === 'white' && stickerColorOn(piece, side) === CENTER_BY_FACE[side]) {
-      score++;
-    }
+export function reorientMove(f: Facelets, color: number): MoveString | null {
+  if (topColor(f) === color) return null;
+  for (const rotation of ['z2', 'x2', 'x', "x'", 'z', "z'"] as MoveString[]) {
+    if (topColor(applyFaceletMoves(f, [rotation])) === color) return rotation;
   }
-  return score;
+  return null;
 }
 
-function whiteCorners(pieces: Piece[]): number {
-  let score = 0;
-  for (const [x, y, z] of U_CORNER_SLOTS) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    const [f1, f2] = U_CORNER_FACES[`${x},${y},${z}`];
-    if (
-      stickerColorOn(piece, 'U') === 'white' &&
-      stickerColorOn(piece, f1) === CENTER_BY_FACE[f1] &&
-      stickerColorOn(piece, f2) === CENTER_BY_FACE[f2]
-    ) {
-      score++;
-    }
-  }
-  return score;
-}
-
-function middleLayer(pieces: Piece[]): number {
-  let score = 0;
-  for (const [x, y, z] of MID_SLOTS) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    const [f1, f2] = MID_FACES[`${x},${y},${z}`];
-    if (
-      stickerColorOn(piece, f1) === CENTER_BY_FACE[f1] &&
-      stickerColorOn(piece, f2) === CENTER_BY_FACE[f2]
-    ) {
-      score++;
-    }
-  }
-  return score;
-}
-
-function yellowOnU(pieces: Piece[]): number {
-  let score = 0;
-  const all = [...U_EDGE_SLOTS, ...U_CORNER_SLOTS];
-  for (const [x, y, z] of all) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    if (stickerColorOn(piece, 'U') === 'yellow') score++;
-  }
-  return score;
-}
-
-function positionCorners(pieces: Piece[]): number {
-  let score = 0;
-  for (const [x, y, z] of U_CORNER_SLOTS) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    const [f1, f2] = U_CORNER_FACES[`${x},${y},${z}`];
-    if (
-      stickerColorOn(piece, f1) === CENTER_BY_FACE[f1] &&
-      stickerColorOn(piece, f2) === CENTER_BY_FACE[f2]
-    ) {
-      score++;
-    }
-  }
-  return score;
-}
-
-function permuteEdges(pieces: Piece[]): number {
-  let score = 0;
-  for (const [x, y, z] of U_EDGE_SLOTS) {
-    const piece = pieceAt(pieces, x, y, z);
-    if (!piece) continue;
-    const side = U_EDGE_SIDE[`${x},${y},${z}`];
-    if (stickerColorOn(piece, 'U') === 'yellow' && stickerColorOn(piece, side) === CENTER_BY_FACE[side]) {
-      score++;
-    }
-  }
-  return score;
-}
-
-interface BaseScorer {
-  value: (pieces: Piece[]) => number;
-  max: number;
-}
-
-const SCORERS: Record<string, BaseScorer> = {
-  'white-cross': { value: whiteCross, max: 4 },
-  'white-corners': { value: whiteCorners, max: 4 },
-  'middle-layer': { value: middleLayer, max: 4 },
-  'yellow-cross': { value: yellowOnU, max: 4 },
-  'yellow-face': { value: yellowOnU, max: 8 },
-  'position-corners': { value: positionCorners, max: 4 },
-  'permute-edges': { value: permuteEdges, max: 4 },
-};
-
-function combined(a: BaseScorer, b: BaseScorer): BaseScorer {
+function reorientHint(f: Facelets, color: number): StageHint | null {
+  const rotation = reorientMove(f, color);
+  if (!rotation) return null;
   return {
-    value: (pieces) => a.value(pieces) + b.value(pieces),
-    max: a.max + b.max,
+    status: 'reorient',
+    steps: [{ kind: 'rotate', moves: [rotation], label: `Rotate ${rotation}` }],
+    explanation: `Hold the cube with ${COLORS[color]} on top for this stage.`,
+    gain: 0,
   };
 }
 
-const STAGE_SCOPE: Record<string, BaseScorer | BaseScorer[]> = {
-  'white-cross': SCORERS['white-cross'],
-  'white-corners': SCORERS['white-corners'],
-  'middle-layer': SCORERS['middle-layer'],
-  'yellow-cross': SCORERS['yellow-cross'],
-  'yellow-face': SCORERS['yellow-face'],
-  'position-corners': SCORERS['position-corners'],
-  'permute-edges': SCORERS['permute-edges'],
-  'cfop-cross': SCORERS['white-cross'],
-  'cfop-f2l': [SCORERS['white-corners'], SCORERS['middle-layer']],
-  'cfop-oll-2look': SCORERS['yellow-face'],
-  'cfop-oll-full': SCORERS['yellow-face'],
-  'cfop-pll-2look': [SCORERS['position-corners'], SCORERS['permute-edges']],
-  'cfop-pll-full': [SCORERS['position-corners'], SCORERS['permute-edges']],
-};
+function searchMoves(f: Facelets, goal: StageGoal): MoveString[] | null {
+  const current = goal.progress(f);
+  const keep = EDGE_SLOTS.filter((s) => slotHas(f, s, WHITE) && slotSolved(f, s));
+  const path: MoveString[] = [];
+  let nodes = 0;
 
-const RATIONALE: Record<string, string> = {
-  'white-cross': 'Aim to get each white edge onto the top with its side color matched to its center.',
-  'white-corners': 'Aim to slot each white corner home so its side colors match the adjacent centers.',
-  'middle-layer': 'Aim to insert each middle edge so both of its colors match their centers.',
-  'yellow-cross': 'Aim to orient the yellow edges into a cross on top.',
-  'yellow-face': 'Aim to fill the entire top face with yellow.',
-  'position-corners': 'Aim to put each yellow corner in its correct top position.',
-  'permute-edges': 'Aim to cycle the yellow edges into their final correct spots.',
-  cfop: 'Work toward this stage’s goal — see the progress bar for how close you are.',
-};
+  const dfs = (state: Facelets, depth: number): boolean => {
+    if (depth === 0) {
+      return goal.progress(state) > current && keep.every((s) => slotSolved(state, s));
+    }
+    for (const move of ALL_MOVES) {
+      const face = moveBase(move);
+      const prev = path.length > 0 ? moveBase(path[path.length - 1]) : null;
+      if (prev === face) continue;
+      if (prev && OPPOSITE_AXIS[prev] === face && prev > face) continue;
+      if (++nodes > NODE_LIMIT) return false;
+      path.push(move);
+      if (dfs(applyPerm(state, movePerm(move)), depth - 1)) return true;
+      path.pop();
+    }
+    return false;
+  };
 
-function stageScorer(stageId: string): BaseScorer {
-  const scope = STAGE_SCOPE[stageId];
-  if (!scope) return { value: () => 0, max: 0 };
-  if (Array.isArray(scope)) {
-    return scope.reduce((acc, s) => combined(acc, s));
+  for (let depth = 1; depth <= SEARCH_DEPTH; depth++) {
+    if (dfs(f, depth)) return [...path];
+    if (nodes > NODE_LIMIT) break;
   }
-  return scope;
+  return null;
 }
 
-function dirOf(move: MoveString): 1 | -1 | 2 {
-  if (move.includes("'")) return -1;
-  if (move.includes('2')) return 2;
-  return 1;
-}
-
-export interface StageProgress {
-  move: MoveString | null;
-  moves: MoveString[];
-  delta: number;
-  value: number;
-  max: number;
-  rationale: string;
-}
-
-const MAX_SEQUENCE_LENGTH = 3;
-
-function faceOf(move: MoveString): FaceName {
-  return move[0] as FaceName;
-}
-
-const AXIS: Record<FaceName, number> = { U: 1, D: 1, F: 2, B: 2, L: 0, R: 0 };
-
-function isRedundant(seq: MoveString[], move: MoveString): boolean {
-  if (seq.length === 0) return false;
-  const prev = seq[seq.length - 1];
-  return AXIS[faceOf(prev)] === AXIS[faceOf(move)];
-}
-
-interface SearchState {
-  pieces: Piece[];
+interface Macro {
+  steps: HintStep[];
   moves: MoveString[];
 }
 
-export function getStageProgress(stageId: string, pieces: Piece[]): StageProgress {
-  const scorer = stageScorer(stageId);
-  const current = scorer.value(pieces);
-  const rationale = RATIONALE[stageId] ?? RATIONALE.cfop;
-
-  if (current >= scorer.max) {
-    return { move: null, moves: [], delta: 0, value: current, max: scorer.max, rationale };
-  }
-
-  const apply = (base: Piece[], move: MoveString): Piece[] =>
-    applyMoveToPieces(base, FACE_TO_AXIS[faceOf(move)], dirOf(move));
-
-  let bestSingle: MoveString | null = null;
-  let bestSingleScore = current;
-
-  let queue: SearchState[] = [{ pieces, moves: [] }];
-  for (let depth = 1; depth <= MAX_SEQUENCE_LENGTH && queue.length > 0; depth++) {
-    const nextLevel: SearchState[] = [];
-    for (const { pieces: base, moves } of queue) {
-      for (const move of ALL_MOVES) {
-        if (isRedundant(moves, move)) continue;
-
-        const next = apply(base, move);
-        const score = scorer.value(next);
-
-        if (depth === 1 && score > bestSingleScore) {
-          bestSingleScore = score;
-          bestSingle = move;
-        }
-
-        const seq = [...moves, move];
-        if (score === scorer.max) {
-          return {
-            move: seq[0],
-            moves: seq,
-            delta: scorer.max - current,
-            value: current,
-            max: scorer.max,
-            rationale,
-          };
-        }
-
-        if (depth < MAX_SEQUENCE_LENGTH) {
-          nextLevel.push({ pieces: next, moves: seq });
+function buildMacros(items: DrillItem[]): Macro[] {
+  const rotations: (MoveString | null)[] = [null, 'y', "y'", 'y2'];
+  const aufs: (MoveString | null)[] = [null, 'U', "U'", 'U2'];
+  const macros: Macro[] = [];
+  for (const rotation of rotations) {
+    for (const auf of aufs) {
+      for (const item of items) {
+        for (let reps = 1; reps <= item.repeat; reps++) {
+          const steps: HintStep[] = [];
+          if (rotation) steps.push({ kind: 'rotate', moves: [rotation], label: `Rotate ${rotation}` });
+          if (auf) steps.push({ kind: 'auf', moves: [auf], label: `Turn ${auf}` });
+          const algMoves = Array.from({ length: reps }, () => item.moves).flat();
+          steps.push({ kind: 'alg', moves: algMoves, label: reps > 1 ? `${item.name} ×${reps}` : item.name });
+          macros.push({ steps, moves: steps.flatMap((s) => s.moves) });
         }
       }
     }
-    queue = nextLevel;
+  }
+  return macros;
+}
+
+function itemsFor(stageId: string, goal: StageGoal): DrillItem[] {
+  const ids = [stageId, ...(goal.borrowAlgorithmsFrom ?? [])];
+  const seen = new Set<string>();
+  return ids
+    .flatMap((id) => {
+      const stage = stageById(id);
+      return stage ? stageItems(stage) : [];
+    })
+    .filter((item) => {
+      if (seen.has(item.notation)) return false;
+      seen.add(item.notation);
+      return true;
+    });
+}
+
+interface Candidate {
+  steps: HintStep[];
+  gain: number;
+  length: number;
+}
+
+function better(a: Candidate, b: Candidate | null): boolean {
+  if (!b) return true;
+  if (a.gain !== b.gain) return a.gain > b.gain;
+  return a.length < b.length;
+}
+
+function searchMacros(f: Facelets, goal: StageGoal, macros: Macro[]): Candidate | null {
+  const current = goal.progress(f);
+  const results = macros.map((macro) => {
+    const next = applyFaceletMoves(f, macro.moves);
+    return { macro, next, ok: goal.prereq(next), gain: goal.progress(next) - current };
+  });
+
+  let best: Candidate | null = null;
+  for (const r of results) {
+    if (!r.ok || r.gain <= 0) continue;
+    const candidate = { steps: r.macro.steps, gain: r.gain, length: r.macro.moves.length };
+    if (better(candidate, best)) best = candidate;
+  }
+  if (best) return best;
+
+  for (const first of results) {
+    if (!first.ok) continue;
+    for (const second of macros) {
+      const next = applyFaceletMoves(first.next, second.moves);
+      if (!goal.prereq(next)) continue;
+      const gain = goal.progress(next) - current;
+      if (gain <= 0) continue;
+      const candidate = {
+        steps: [...first.macro.steps, ...second.steps],
+        gain,
+        length: first.macro.moves.length + second.moves.length,
+      };
+      if (better(candidate, best)) best = candidate;
+    }
+  }
+  return best;
+}
+
+function describe(gain: number, steps: HintStep[]): string {
+  const algs = steps.filter((s) => s.kind === 'alg').map((s) => s.label);
+  const what = algs.length > 0 ? `Use ${algs.join(', then ')}. ` : '';
+  return `${what}Solves ${gain} more piece${gain === 1 ? '' : 's'} for this stage.`;
+}
+
+export function getStageHint(stageId: string, pieces: Piece[]): StageHint {
+  const goal = STAGE_GOALS[stageId];
+  if (!goal) return { status: 'stuck', steps: [], explanation: 'No hints for this stage.', gain: 0 };
+
+  const f = piecesToFacelets(pieces);
+  if (!goal.prereq(f)) {
+    return {
+      status: 'prereq',
+      steps: [],
+      explanation: 'Earlier stages are not solved yet. Finish them first, or set up a practice position.',
+      gain: 0,
+    };
+  }
+  if (goal.progress(f) >= goal.max) {
+    return { status: 'done', steps: [], explanation: 'Stage complete!', gain: 0 };
+  }
+  if (goal.preferredTop !== null) {
+    const reorient = reorientHint(f, goal.preferredTop);
+    if (reorient) return reorient;
   }
 
-  return {
-    move: bestSingle,
-    moves: bestSingle ? [bestSingle] : [],
-    delta: bestSingleScore - current,
-    value: current,
-    max: scorer.max,
-    rationale,
-  };
+  if (goal.hintMode === 'search') {
+    const moves = searchMoves(f, goal);
+    if (!moves) {
+      return {
+        status: 'stuck',
+        steps: [],
+        explanation: 'No short sequence found. Try bringing a target piece into the top or bottom layer first.',
+        gain: 0,
+      };
+    }
+    const gain = goal.progress(applyFaceletMoves(f, moves)) - goal.progress(f);
+    return {
+      status: 'hint',
+      steps: [{ kind: 'moves', moves, label: 'Moves' }],
+      explanation: `Solves ${gain} more piece${gain === 1 ? '' : 's'} without breaking what's done.`,
+      gain,
+    };
+  }
+
+  const best = searchMacros(f, goal, buildMacros(itemsFor(stageId, goal)));
+  if (!best) {
+    for (const fallbackId of goal.fallbackStages ?? []) {
+      const fallback = STAGE_GOALS[fallbackId];
+      if (!fallback.prereq(f) || fallback.progress(f) >= fallback.max) continue;
+      const hint = getStageHint(fallbackId, pieces);
+      if (hint.status === 'hint') {
+        const name = stageById(fallbackId)?.name ?? fallbackId;
+        return { ...hint, explanation: `Beginner-style step (${name}): ${hint.explanation}` };
+      }
+    }
+    return {
+      status: 'stuck',
+      steps: [],
+      explanation: 'No known algorithm makes progress from here. Try a few U turns, or set up a new practice position.',
+      gain: 0,
+    };
+  }
+  return { status: 'hint', steps: best.steps, explanation: describe(best.gain, best.steps), gain: best.gain };
 }

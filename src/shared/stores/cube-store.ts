@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CubeState, MoveString, FaceName } from '@/shared/types/cube';
-import { SOLVED_STATE, FACE_TO_AXIS } from '@/shared/types/cube';
-import { applyMove, applyMoves, cloneState, isSolved } from '@/features/engine/moves';
+import type { CubeState, MoveString, MoveSpec } from '@/shared/types/cube';
+import { SOLVED_STATE, moveSpec } from '@/shared/types/cube';
+import { applyMove, applyMoves, cloneState, invertAlgorithm, isSolved } from '@/features/engine/moves';
 import { generateScramble } from '@/features/engine/scramble';
 import {
   buildSolvedPieces,
@@ -19,19 +19,12 @@ interface HistoryEntry {
 }
 
 export function piecesForMoves(moves: MoveString[]): Piece[] {
-  return applyMovesToPieces(
-    buildSolvedPieces(),
-    moves.map((move) => ({
-      axis: FACE_TO_AXIS[move[0] as FaceName],
-      direction: move.includes("'") ? -1 : move.includes('2') ? 2 : 1,
-    })),
-  );
+  return applyMovesToPieces(buildSolvedPieces(), moves);
 }
 
 export interface PendingMove {
   move: MoveString;
-  face: FaceName;
-  direction: 1 | -1 | 2;
+  spec: MoveSpec;
 }
 
 export interface PracticeStart {
@@ -62,17 +55,14 @@ interface CubeStore {
   undo: () => void;
   setMoveSpeed: (speed: number) => void;
   getInverseAlgorithm: () => MoveString[];
+  loadPosition: (moves: MoveString[]) => void;
   startPractice: () => void;
   clearPractice: () => void;
   resetToPracticeStart: () => void;
 }
 
-function parseMove(moveStr: MoveString): PendingMove {
-  const face = moveStr[0] as FaceName;
-  let direction: 1 | -1 | 2 = 1;
-  if (moveStr.includes("'")) direction = -1;
-  else if (moveStr.includes('2')) direction = 2;
-  return { move: moveStr, face, direction };
+function parseMove(move: MoveString): PendingMove {
+  return { move, spec: moveSpec(move) };
 }
 
 export const useCubeStore = create<CubeStore>()(
@@ -133,11 +123,7 @@ export const useCubeStore = create<CubeStore>()(
         if (!currentAnimation) return;
 
         const newState = applyMove(state, currentAnimation.move);
-        const newPieces = applyMoveToPieces(
-          pieces,
-          FACE_TO_AXIS[currentAnimation.face],
-          currentAnimation.direction,
-        );
+        const newPieces = applyMoveToPieces(pieces, currentAnimation.spec);
         const newHistory = [
           ...history,
           { state: cloneState(state), pieces: clonePieces(pieces), move: currentAnimation.move },
@@ -220,14 +206,22 @@ export const useCubeStore = create<CubeStore>()(
 
       getInverseAlgorithm: () => {
         const { history } = get();
-        return history
-          .map((entry) => {
-            const move = entry.move;
-            if (move.includes("'")) return move[0] as MoveString;
-            if (move.includes('2')) return move as MoveString;
-            return `${move}'` as MoveString;
-          })
-          .reverse();
+        return invertAlgorithm(history.map((entry) => entry.move));
+      },
+
+      loadPosition: (moves) => {
+        const newState = applyMoves(cloneState(SOLVED_STATE), moves);
+        set({
+          state: newState,
+          pieces: piecesForMoves(moves),
+          history: [],
+          solved: isSolved(newState),
+          moveQueue: [],
+          currentAnimation: null,
+          animationId: 0,
+          isAnimating: false,
+          practiceStart: null,
+        });
       },
 
       startPractice: () => {

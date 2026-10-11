@@ -76,7 +76,7 @@ animationId, moveSpeed, solved, scrambleMoves, practiceStart
 
 ### 2.1 Requesting a move
 
-`applyMove(move)` or `applyAlgorithm(moves)` parse a `MoveString` into a `PendingMove { move, face, direction }`, where `direction` is `1 | -1 | 2`.
+`applyMove(move)` or `applyAlgorithm(moves)` parse a `MoveString` into a `PendingMove { move, spec }`, where `spec = moveSpec(move)` is a `MoveSpec { axis, layers, direction }` (`direction` is `1 | -1 | 2`).
 
 - If nothing is animating and the queue is empty, the first move becomes `currentAnimation` and `isAnimating = true`.
 - Otherwise the move is appended to `moveQueue`.
@@ -97,7 +97,9 @@ animationId, moveSpeed, solved, scrambleMoves, practiceStart
 
 ### 2.4 Undo
 
-`undo()` refuses while animating, then pops the last history entry and restores both representations from it. `getInverseAlgorithm()` reconstructs the inverse of the applied moves (used implicitly by the history model) — it reverses the history and flips `'` markers.
+`undo()` refuses while animating, then pops the last history entry and restores both representations from it. `getInverseAlgorithm()` returns `invertAlgorithm` of the history moves.
+
+`loadPosition(moves)` instantly (no animation) sets both representations to `solved + moves`, clearing history and the queue. The Learn tab uses it for practice setups and drills.
 
 ### 2.5 Persistence
 
@@ -107,7 +109,13 @@ animationId, moveSpeed, solved, scrambleMoves, practiceStart
 
 ## 3. Move engine (`src/features/engine/moves.ts`)
 
-A pure grid engine. Key API: `applyMove`, `applyMoves`, `parseMoveString`, `parseAlgorithm`, `isSolved`, `cloneState`.
+A pure grid engine. Key API: `applyMove`, `applyMoves`, `parseMoveString`, `parseAlgorithm`, `invertMove`, `invertAlgorithm`, `isSolved`, `cloneState`.
+
+### 3.0 Notation
+
+`MoveString` (`src/shared/types/cube.ts`) covers outer faces `U D F B L R`, wide moves `u d f b l r`, slices `M E S` and whole-cube rotations `x y z`, each with `''`, `'` or `2`. `MOVE_BASES` maps each letter to an axis plus the layers (coordinates along that axis) that turn: `M` follows `L`, `E` follows `D`, `S` follows `F`, and `x`/`y`/`z` follow `R`/`U`/`F` across all three layers. `parseMoveString` is case-sensitive (lowercase = wide) and also accepts `Rw` and `2'`.
+
+Outer face turns use the hand-written `clockwiseCycle` grid code. Every other move is applied **geometrically** (`applySpecGeometrically`): each grid cell is mapped to its 3D slot with `faceletPosition`/`faceletCell` (`pieces.ts`, the Singmaster net layout) and rotated with the same `rotateVec` the piece model uses, so the two representations agree by construction.
 
 ### 3.1 The prime-as-three-turns invariant
 
@@ -127,11 +135,11 @@ Checks that each face is uniformly its center color. Used to set the store's `so
 
 ### 4.1 Rotation math
 
-`applyMoveToPieces(pieces, axis, direction)`:
+`applyMoveToPieces(pieces, spec: MoveSpec)`:
 
-- Picks the per-axis rotation function (`rotX`/`rotY`/`rotZ`) and a sign from the chosen axis.
-- Computes `theta = angleFor(direction) * sign(axis)`, where `angleFor` maps `1 → -PI/2`, `-1 → PI/2`, `2 → PI`.
-- Rotates every piece **on the slice** (`onSlice`, a position coordinate equal to the axis value) — both `position` and each `sticker.dir` — then `snap`s (rounds) them back to integer slot/dir values.
+- `rotateVec(v, spec)` picks the per-axis rotation function (`rotX`/`rotY`/`rotZ`), computes `theta = angleFor(direction) * sign(axis)` (`angleFor` maps `1 → -PI/2`, `-1 → PI/2`, `2 → PI`), and `snap`s back to integers.
+- Every piece whose coordinate along the axis is in `spec.layers` (`inMove`) has its `position` and each `sticker.dir` rotated.
+- `piecesInMove(pieces, spec)` returns those pieces (the renderer animates them). `piecesToState(pieces)` derives the grid from the piece model.
 
 ### 4.2 The rotation-convention invariant
 
@@ -161,7 +169,7 @@ A `<Canvas>` (react-three-fiber) containing lights, the animated pieces, the cam
 
 ### 5.2 Slice animation
 
-During a move, the 9 pieces on the `currentAnimation.face` are pulled out of the static group and wrapped in `AnimatedSlice`, which rotates them via `@react-spring/three` by the same angle as `ANGLE_MAP` (see §4.2). The group's `key` includes `animationId` so each new move mounts a fresh spring; `onRest` calls the store's `onAnimationComplete` (see §2.3). A small `Html` overlay shows the current move name.
+During a move, the pieces in `piecesInMove(pieces, currentAnimation.spec)` (9 for a face or slice, 18 for a wide move, 26 for a rotation) are pulled out of the static group and wrapped in `AnimatedSlice`, which rotates them via `@react-spring/three` by the same angle as `ANGLE_MAP` (see §4.2). The group's `key` includes `animationId` so each new move mounts a fresh spring; `onRest` calls the store's `onAnimationComplete` (see §2.3). A small `Html` overlay shows the current move name.
 
 Sizes: `CUBIE_SIZE = 0.94`, `GAP = 0.06`, `SLOT = CUBIE_SIZE + GAP = 1`.
 
@@ -195,7 +203,7 @@ The Kociemba two-phase algorithm is expensive and synchronous, so it runs in a *
 - `solveCube(state)` returns `Promise<MoveString[]>`:
   - Enforces a **single in-flight request** — rejects with "A solve is already in progress" if `pending` is set.
   - Imposes a **20s timeout** (`SOLVE_TIMEOUT_MS`) via `setTimeout`.
-  - Serializes the grid to a flat 54-char string (`stateToFlatString`, face order `U R F D L B`) and posts it to the worker.
+  - Serializes the grid to a flat 54-char string (`stateToFlatString`, face order `U R F D L B`), labelling each color by the face whose **center** currently has it, so solving works after `x`/`y`/`z` rotations. Posts it to the worker.
   - On `solve-result`, parses the solution moves and **verifies** `isSolved(applyMoves(state, moves))` before resolving; rejects if invalid.
   - Handles worker `error` events.
 - `preload.ts` — `preloadSolver()` calls `ensureSolver()` once, called from `App` on mount so the first Solve is fast (worker spins up behind the scenes).
@@ -227,31 +235,43 @@ The Learn tab teaches beginner (7 stages) and CFOP (6 stages) methods.
 
 ### 8.1 Stage definitions
 
-`stages.ts` loads `ALL_STAGES` from `algorithms.json` (`src/features/learning/algorithms.json`). Each `LearningStage` has an `id`, `method` (`beginner`/`cfop`), `order`, `prerequisite`, `goal`, and a list of `algorithms` (notations plus named cases). `BEGINNER_STAGES` and `CFOP_STAGES` are derived by filtering on `method`.
+`stages.ts` loads `ALL_STAGES` from `algorithms.json`. Each `LearningStage` has an `id`, `method`, `order`, `prerequisite`, `goal`, optional `tips` and `drill` flag, and `algorithms`. Each algorithm has a `name`, `notation`, optional `repeat` (e.g. trigger ×1–5) and `recognition`, and optional `cases` (each with parseable `moves`). `stageItems(stage)` flattens a stage into `DrillItem`s: its cases, or the case-less algorithm itself.
 
-### 8.2 Suggestions (`suggestions.ts`)
+### 8.2 Facelets (`facelets.ts`)
 
-`getStageProgress(stageId, pieces)` computes the best next move:
+A fast 54-sticker view (`Uint8Array`, face order `U D F B L R`) used by every learning computation. `movePerm(move)` compiles each move into a 54-index permutation from the same geometry as the piece model; `piecesToFacelets(pieces)` converts the live cube. Predicates are **orientation-independent** because they compare against the live centers: `slotSolved` (every sticker matches its face's center), `slotOriented(color)`, `slotHas(color)`.
 
-1. **Score the stage** via a `SCORERS` map — each stage defines what "progress" means (e.g. `whiteCross` counts white edges matched to their centers; `yellowOnU` counts yellow stickers on top).
-2. **Greedy breadth-first search** up to `MAX_SEQUENCE_LENGTH = 3` moves over `ALL_MOVES`, skipping redundant consecutive same-axis moves (`isRedundant`). It simulates moves on the piece model (via `applyMoveToPieces`) to find a move/sequence that increases the score, immediately returning the shortest path that reaches the stage `max`.
-3. Returns the first move, the best sequence, the resulting score delta, and a human `rationale`.
+### 8.3 Stage goals (`stage-goals.ts`)
 
-The panel drives its progress bar and auto-advance (`stageComplete` when `value >= max`) from this.
+`STAGE_GOALS[stageId]` defines `prereq` (earlier stages intact), `progress`/`max`, `preferredTop` (yellow on top for everything after the cross), `targets` (unsolved slots, for highlights), `hintMode` (`search` or `macros`), and a `setup` generator. `generateStageSetup(stageId)` randomly applies prerequisite-preserving macros (e.g. `X U^k X'` for F2L, inverses of last-layer algorithms) after `z2` and retries until `prereq && progress < max`.
 
-### 8.3 Highlights (`highlights.ts`)
+### 8.4 Hints (`suggestions.ts`)
 
-`getStageHighlights(stageId, pieces)` returns `Map<pieceId, {label?}>` keyed by **piece id** (not slot) so highlights follow the physical piece as it moves. It uses the slot tables (`edgeSlots`, `cornerSlots`, `middleLayerSlots`, etc.) to decide which pieces to mark per stage.
+`getStageHint(stageId, pieces)` returns ordered `HintStep`s (`rotate`, `auf`, `alg`, `moves`):
 
-### 8.4 Panel (`learning-panel.tsx`)
+1. Earlier stages unsolved → `prereq`. Wrong color on top → `reorient` (`reorientMove`).
+2. `search` stages (crosses): iterative deepening over the 18 face moves (depth ≤ 5) for the shortest sequence that solves one more cross edge without breaking solved ones.
+3. `macros` stages: try `[y^k] [U^k] algorithm×reps` for every stage item (plus `borrowAlgorithmsFrom`), up to two macros deep, and pick the biggest gain that keeps `prereq`. CFOP F2L falls back to beginner corner/edge hints (`fallbackStages`).
 
-A beginner/CFOP toggle, stage cards (locked until the prerequisite is complete), the suggested-move panel, and per-algorithm cards with "Apply" and per-move "step" buttons. Completed stages persist under localStorage key `rubiks-solver:completed-stages`.
+The Learn panel computes hints on demand ("Show hint") and only while the cube is not animating.
+
+### 8.5 Highlights (`highlights.ts`)
+
+`getStageHighlights(stageId, pieces)` maps `STAGE_GOALS[stageId].targets` slots to **piece ids** via `slotPieceId`, so highlights follow the physical piece. Works for every beginner and CFOP stage.
+
+### 8.6 Panel and drills
+
+`learning-panel.tsx` composes `StageList`, `HintCard`, `AlgorithmCard` (with a `CaseDiagram` SVG computed from the case's algorithm), `PracticeBar` and `DrillPanel`.
+
+- A stage completes only after the panel saw it incomplete **and** the learner made moves (`history.length > 0`); a solved cube no longer auto-completes stages. Completed stages persist under `rubiks-solver:completed-stages`.
+- "Practice" loads the position an algorithm solves (`z2 + invert(alg)`) and steps through it.
+- The drill (`drill.ts`, `drill-panel.tsx`) picks cases weighted by past misses, assisted attempts and slow times (`case-stats.ts`), asks the learner to name the case, then times their execution until the stage goal is reached. Stats persist under `rubiks-solver:case-stats`; "Reset progress" clears both keys.
 
 ---
 
 ## 9. Timer (`src/features/timer/timer-panel.tsx`)
 
-Auto-timing: the app considers a "solve" active when `history.length > 0 && !solved`. On the first move after a scramble the clock starts (`startAtRef = Date.now()`); a `50ms` interval updates the elapsed display; on `solved` it records a session `{ timeMs, moves: history.length, ts }`. Sessions persist under localStorage key `rubiks-solver:solve-sessions`, and the panel shows Best / Average / Solve count.
+Auto-timing: the app considers a "solve" active when `history.length > 0 && !solved`. On the first move after a scramble the clock starts (`startAtRef = Date.now()`); a `50ms` interval updates the elapsed display; on `solved` it records a session `{ timeMs, moves, ts }`, where `moves` counts history entries excluding whole-cube rotations. Sessions persist under localStorage key `rubiks-solver:solve-sessions`, and the panel shows Best / Average / Solve count.
 
 ---
 
@@ -273,6 +293,7 @@ These are the load-bearing invariant rules to preserve when editing:
 4. **Prime is three clockwise turns** — keeps `X X'` an identity and the grid/piece models consistent (§3.1).
 5. **`rubik-solver` lives only in the web worker** — never import it on the main thread (§6.1).
 6. **`cubing` is only imported through `wca-scramble.ts`** — it is GPL and code-splits (§7).
+7. **Learning logic must be orientation-independent** — compare stickers against live centers (`facelets.ts`), never against fixed colors per face (§8.2).
 7. **Keep the x-ray as `RevealPanels`**, not semi-transparent cubies (§5.4).
 8. **Highlights are keyed by piece id, not slot** — highlighted pieces must follow the physical piece as it moves (§8.3).
 9. **The solver is single-in-flight with a 20s timeout** — `solveCube` rejects while a request is pending and never lets the worker hang indefinitely (§6.2).

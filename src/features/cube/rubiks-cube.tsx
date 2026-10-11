@@ -3,11 +3,11 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, Html } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
 import { DoubleSide, Quaternion, Vector3 } from 'three';
-import type { FaceName } from '@/shared/types/cube';
-import { COLOR_TO_HEX, FACE_TO_AXIS } from '@/shared/types/cube';
+import type { FaceName, MoveSpec } from '@/shared/types/cube';
+import { COLOR_TO_HEX } from '@/shared/types/cube';
 import { useCubeStore } from '@/shared/stores/cube-store';
 import type { AxisVec, Piece } from '@/features/engine/pieces';
-import { piecesOnFace, stickerColorOn } from '@/features/engine/pieces';
+import { piecesInMove, piecesOnFace, stickerColorOn } from '@/features/engine/pieces';
 
 export type CameraPresetName =
   | 'isometric'
@@ -188,16 +188,15 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
 };
 
 interface AnimatedSliceProps {
-  face: FaceName;
-  direction: number;
+  spec: MoveSpec;
   slicePieces: Piece[];
   onRest: () => void;
 }
 
-const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ face, direction, slicePieces, onRest }) => {
+const AnimatedSlice: React.FC<AnimatedSliceProps> = ({ spec, slicePieces, onRest }) => {
   const moveSpeed = useCubeStore((s) => s.moveSpeed);
-  const axis = FACE_TO_AXIS[face];
-  const angle = ANGLE_MAP[direction];
+  const axis = spec.axis;
+  const angle = ANGLE_MAP[spec.direction];
 
   const springs = useSpring({
     from: { rotation: 0 },
@@ -230,16 +229,16 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
   const animationId = useCubeStore((s) => s.animationId);
   const onAnimationComplete = useCubeStore((s) => s.onAnimationComplete);
 
-  const turningFace = isAnimating ? currentAnimation?.face : undefined;
+  const turning = isAnimating && !!currentAnimation;
   const slicePieces = useMemo<Piece[]>(() => {
     if (!isAnimating || !currentAnimation) return [];
-    return piecesOnFace(pieces, currentAnimation.face);
+    return piecesInMove(pieces, currentAnimation.spec);
   }, [isAnimating, currentAnimation, pieces]);
 
   return (
     <group>
       {pieces.map((piece) => {
-        if (turningFace && slicePieces.includes(piece)) return null;
+        if (turning && slicePieces.includes(piece)) return null;
         const highlight = highlights?.get(piece.id);
         return (
           <PieceMesh
@@ -253,9 +252,8 @@ const AnimatedPieces: React.FC<AnimatedPiecesProps> = ({ highlights }) => {
 
       {isAnimating && currentAnimation && slicePieces.length > 0 && (
         <AnimatedSlice
-          key={`${currentAnimation.face}-${currentAnimation.move}-${currentAnimation.direction}-${animationId}`}
-          face={currentAnimation.face}
-          direction={currentAnimation.direction}
+          key={`${currentAnimation.move}-${animationId}`}
+          spec={currentAnimation.spec}
           slicePieces={slicePieces}
           onRest={onAnimationComplete}
         />

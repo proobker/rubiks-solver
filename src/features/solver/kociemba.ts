@@ -1,14 +1,6 @@
 import type { CubeState, MoveString, FaceColor } from '@/shared/types/cube';
 import { applyMoves, isSolved } from '@/features/engine/moves';
 
-const COLOR_TO_FACE_LETTER: Record<FaceColor, string> = {
-  white: 'U',
-  yellow: 'D',
-  green: 'F',
-  blue: 'B',
-  orange: 'L',
-  red: 'R',
-};
 
 type WorkerResponse =
   | { type: 'solve-result'; solution: string | null }
@@ -67,13 +59,15 @@ export async function ensureSolver(): Promise<void> {
   return workerReady;
 }
 
-function stateToFlatString(state: CubeState): string {
+export function stateToFlatString(state: CubeState): string {
   const faces = ['U', 'R', 'F', 'D', 'L', 'B'] as const;
+  const letterFor = {} as Record<FaceColor, string>;
+  for (const face of faces) letterFor[state[face][1][1]] = face;
   let result = '';
   for (const face of faces) {
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        result += COLOR_TO_FACE_LETTER[state[face][row][col]];
+        result += letterFor[state[face][row][col]];
       }
     }
   }
