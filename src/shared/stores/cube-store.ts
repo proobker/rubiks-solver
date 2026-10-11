@@ -61,6 +61,42 @@ interface CubeStore {
   resetToPracticeStart: () => void;
 }
 
+type PersistedCube = Pick<CubeStore, 'moveSpeed' | 'state' | 'pieces' | 'scrambleMoves'>;
+
+const FACES = ['U', 'D', 'F', 'B', 'L', 'R'] as const;
+
+function isValidState(value: unknown): value is CubeState {
+  if (!value || typeof value !== 'object') return false;
+  const faces = value as Record<string, unknown>;
+  return FACES.every((face) => {
+    const grid = faces[face];
+    return (
+      Array.isArray(grid) &&
+      grid.length === 3 &&
+      grid.every((row) => Array.isArray(row) && row.length === 3 && row.every((c) => typeof c === 'string'))
+    );
+  });
+}
+
+function isValidPieces(value: unknown): value is Piece[] {
+  return (
+    Array.isArray(value) &&
+    value.length === 26 &&
+    value.every(
+      (p) =>
+        p &&
+        typeof p.id === 'number' &&
+        Array.isArray(p.position) &&
+        p.position.length === 3 &&
+        Array.isArray(p.stickers) &&
+        p.stickers.every((s: unknown) => {
+          const sticker = s as { dir?: unknown; color?: unknown };
+          return Array.isArray(sticker.dir) && sticker.dir.length === 3 && typeof sticker.color === 'string';
+        }),
+    )
+  );
+}
+
 function parseMove(move: MoveString): PendingMove {
   return { move, spec: moveSpec(move) };
 }
@@ -250,7 +286,32 @@ export const useCubeStore = create<CubeStore>()(
     }),
     {
       name: 'rubiks-solver',
-      partialize: (s) => ({ moveSpeed: s.moveSpeed }),
+      version: 1,
+      partialize: (s) => ({
+        moveSpeed: s.moveSpeed,
+        state: s.state,
+        pieces: s.pieces,
+        scrambleMoves: s.scrambleMoves,
+      }),
+      migrate: (persisted) => {
+        const moveSpeed = (persisted as Partial<PersistedCube> | null)?.moveSpeed;
+        return typeof moveSpeed === 'number' ? { moveSpeed } : {};
+      },
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<PersistedCube>;
+        const moveSpeed = typeof saved.moveSpeed === 'number' ? saved.moveSpeed : current.moveSpeed;
+        if (!isValidState(saved.state) || !isValidPieces(saved.pieces)) {
+          return { ...current, moveSpeed };
+        }
+        return {
+          ...current,
+          moveSpeed,
+          state: saved.state,
+          pieces: saved.pieces,
+          scrambleMoves: Array.isArray(saved.scrambleMoves) ? saved.scrambleMoves : [],
+          solved: isSolved(saved.state),
+        };
+      },
     },
   ),
 );

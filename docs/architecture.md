@@ -103,7 +103,7 @@ animationId, moveSpeed, solved, scrambleMoves, practiceStart
 
 ### 2.5 Persistence
 
-`persist` middleware stores **only** `moveSpeed` (via `partialize`). The cube `state`/`pieces` are never serialized — a fresh page load starts solved. See §9.
+`persist` middleware (key `rubiks-solver`, `version: 1`) stores `moveSpeed`, `state`, `pieces` and `scrambleMoves` via `partialize`, so a reload restores the cube. `history`, the animation queue and `practiceStart` are not persisted, so undo starts fresh after a reload. `merge` validates `state` and `pieces` together and falls back to solved if either is malformed. See §9.
 
 ---
 

@@ -66,7 +66,7 @@ See `docs/architecture.md` §8 for details.
 ## Persistence
 
 - Installed as a **PWA** via `vite-plugin-pwa` in `vite.config.ts` (`registerType: 'autoUpdate'`). Site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); `manifest`/`workbox.navigateFallback`/`scope`/`start_url` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`); keep them in sync with the manifest if you re-theme.
-- `moveSpeed` is persisted via zustand `persist` on `cube-store.ts` (`partialize` keeps only `moveSpeed`; the cube `state`/`pieces` are never serialized).
+- `cube-store.ts` uses zustand `persist` (key `rubiks-solver`, `version: 1`): `partialize` keeps `moveSpeed`, `state`, `pieces`, `scrambleMoves` so the cube survives reloads. `history`, the animation queue and `practiceStart` are not persisted. `merge` validates `state`/`pieces` together (falls back to solved if either is malformed) and recomputes `solved`.
 - Completed learning stages persist via `src/lib/use-local-storage.ts` under the key `rubiks-solver:completed-stages` (a `string[]` of stage ids). Drill stats persist under `rubiks-solver:case-stats`.
 - Reset progress clears both keys and is surfaced in the Learn tab.
 
