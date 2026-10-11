@@ -25,9 +25,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render(): React.ReactNode {
     if (this.state.error) {
       return (
-        <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-white p-6">
+        <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-zinc-50 p-6">
           <div className="max-w-lg w-full p-6 bg-red-500/10 border border-red-500/40 rounded-lg">
-            <h1 className="text-lg font-bold text-red-400 mb-3">Something went wrong</h1>
+            <h1 className="text-lg font-semibold text-red-400 mb-3">Something went wrong</h1>
             <pre className="text-xs text-zinc-300 whitespace-pre-wrap break-words font-mono bg-black/30 p-3 rounded">
               {this.state.error.message}
             </pre>

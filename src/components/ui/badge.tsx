@@ -4,12 +4,12 @@ import { cn } from '@/lib/utils';
 type Tone = 'neutral' | 'green' | 'amber' | 'violet' | 'sky' | 'red';
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-white/[0.07] text-zinc-300 border-white/10',
-  green: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/25',
-  amber: 'bg-amber-500/15 text-amber-200 border-amber-400/25',
-  violet: 'bg-violet-500/15 text-violet-300 border-violet-400/25',
-  sky: 'bg-sky-500/15 text-sky-300 border-sky-400/25',
-  red: 'bg-red-500/15 text-red-300 border-red-400/25',
+  neutral: 'bg-zinc-800 text-zinc-200 border-transparent',
+  green: 'bg-emerald-500/15 text-emerald-300 border-transparent',
+  amber: 'bg-amber-500/15 text-amber-200 border-transparent',
+  violet: 'bg-accent/20 text-accent-soft border-transparent',
+  sky: 'bg-accent/15 text-accent-soft border-transparent',
+  red: 'bg-red-500/15 text-red-300 border-transparent',
 };
 
 export const Badge: React.FC<{ tone?: Tone; className?: string; children: React.ReactNode }> = ({
@@ -19,7 +19,7 @@ export const Badge: React.FC<{ tone?: Tone; className?: string; children: React.
 }) => (
   <span
     className={cn(
-      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold tabular-nums whitespace-nowrap',
+      'inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[11px] font-medium tabular-nums whitespace-nowrap',
       TONES[tone],
       className,
     )}

@@ -39,11 +39,11 @@ export const StageStepper: React.FC<StageStepperProps> = ({
                 aria-label={`Stage ${i + 1}: ${stage.name}${done ? ' (complete)' : locked ? ' (locked)' : ''}`}
                 aria-current={active ? 'step' : undefined}
                 className={cn(
-                  'relative shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200',
-                  done && 'bg-emerald-500 text-white',
+                  'relative shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200',
+                  done && 'bg-emerald-500 text-zinc-50',
                   !done && active && 'bg-white text-zinc-900',
-                  !done && !active && !locked && 'bg-white/[0.08] text-zinc-300 hover:bg-white/15 border border-white/10',
-                  locked && 'bg-white/[0.03] text-zinc-600 border border-white/[0.06] cursor-not-allowed',
+                  !done && !active && !locked && 'bg-white/[0.08] text-zinc-300 hover:bg-white/15 border border-zinc-800',
+                  locked && 'bg-white/[0.03] text-zinc-600 border border-zinc-800 cursor-not-allowed',
                   active && 'ring-2 ring-offset-2 ring-offset-panel ring-emerald-400 scale-110',
                 )}
               >
@@ -70,7 +70,7 @@ export const StageStepper: React.FC<StageStepperProps> = ({
             <span className="flex items-center gap-1 animate-pop-in">
               <Button
                 size="xs"
-                accent="red"
+                accent="danger"
                 onClick={() => {
                   onResetProgress();
                   setConfirmReset(false);

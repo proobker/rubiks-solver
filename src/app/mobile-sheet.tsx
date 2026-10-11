@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { ACCENT_TEXT } from '@/components/ui/variants';
 import { TABS, type Tab } from './tabs';
 
 interface MobileSheetProps {
@@ -34,7 +33,7 @@ export const MobileSheet: React.FC<MobileSheetProps> = ({ expanded, onExpandedCh
     <>
       <div
         className={cn(
-          'flex flex-col bg-panel border-t border-white/[0.08] rounded-t-3xl -mt-4 relative z-10 shadow-[0_-12px_30px_rgba(0,0,0,0.45)] transition-[height] duration-300 ease-out',
+          'flex flex-col bg-panel border-t border-zinc-800 rounded-t-lg -mt-2 relative z-10 transition-[height] duration-300 ease-out',
           expanded ? 'h-[78dvh]' : 'h-[42dvh]',
         )}
       >
@@ -46,11 +45,11 @@ export const MobileSheet: React.FC<MobileSheetProps> = ({ expanded, onExpandedCh
           onPointerUp={onPointerUp}
           className="shrink-0 flex justify-center pt-2.5 pb-2 touch-none"
         >
-          <span className="h-1.5 w-12 rounded-full bg-white/25" />
+          <span className="h-1 w-10 rounded-full bg-zinc-700" />
         </button>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">{children}</div>
       </div>
-      <nav className="shrink-0 grid grid-cols-4 bg-panel border-t border-white/[0.08] pb-[env(safe-area-inset-bottom)]">
+      <nav className="shrink-0 grid grid-cols-4 bg-panel border-t border-zinc-800 pb-[env(safe-area-inset-bottom)]">
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = t.id === tab;
@@ -61,11 +60,12 @@ export const MobileSheet: React.FC<MobileSheetProps> = ({ expanded, onExpandedCh
               onClick={() => onTabChange(t.id)}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors',
-                active ? ACCENT_TEXT[t.accent] : 'text-zinc-500',
+                'relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors',
+                active ? 'text-zinc-50' : 'text-zinc-500 hover:text-zinc-300',
               )}
             >
-              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              {active && <span aria-hidden className="absolute top-0 inset-x-6 h-0.5 bg-accent" />}
+              <Icon size={20} strokeWidth={1.75} />
               {t.label}
             </button>
           );

@@ -93,11 +93,11 @@ export const SolvePanel: React.FC = () => {
     return (
       <div className="flex flex-col gap-4">
         <Card className="flex flex-col items-center text-center gap-3 py-6">
-          <div className="w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-400/30 flex items-center justify-center text-orange-300">
+          <div className="w-14 h-14 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent-soft">
             <Wand2 size={26} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Auto solver</h2>
+            <h2 className="font-serif text-lg font-medium text-zinc-50">Auto solver</h2>
             <p className="text-xs text-zinc-400 mt-1 max-w-64">
               {stale
                 ? 'The cube changed since the last solution. Solve again from here.'
@@ -122,7 +122,7 @@ export const SolvePanel: React.FC = () => {
             <AlertTriangle size={18} className="text-red-300 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-xs text-red-200">{error}</p>
-              <Button size="xs" variant="soft" accent="red" className="mt-2" onClick={() => void handleSolve()}>
+              <Button size="xs" variant="soft" accent="danger" className="mt-2" onClick={() => void handleSolve()}>
                 Try again
               </Button>
             </div>
@@ -137,7 +137,7 @@ export const SolvePanel: React.FC = () => {
       <Card className="flex flex-col gap-3 animate-pop-in">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-bold text-white">Solution</h2>
+            <h2 className="font-serif text-lg font-medium text-zinc-50">Solution</h2>
             <p className="text-xs text-zinc-400">{total} moves</p>
           </div>
           <div className="flex items-center gap-1.5">
@@ -150,7 +150,7 @@ export const SolvePanel: React.FC = () => {
           </div>
         </div>
 
-        <Progress value={step} max={total} accent="orange" />
+        <Progress value={step} max={total} />
         <MoveChips moves={solution.moves} progressIndex={step} />
 
         <div className="grid grid-cols-4 gap-2">
@@ -174,7 +174,7 @@ export const SolvePanel: React.FC = () => {
         </div>
         {!finished && solution.moves[step] && (
           <p className="text-xs text-zinc-400 text-center">
-            Next move: <span className="font-mono font-bold text-orange-300">{solution.moves[step]}</span>
+            Next move: <span className="font-mono font-semibold text-accent-soft">{solution.moves[step]}</span>
           </p>
         )}
       </Card>

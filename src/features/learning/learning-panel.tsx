@@ -245,15 +245,15 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
           <Section id="learn-about" title="About this stage" icon={<BookOpen size={14} />}>
             <div className="flex flex-col gap-3">
               <p className="text-sm text-zinc-300">{activeStage.description}</p>
-              <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 mb-1">Goal</p>
+              <div className="rounded-md border border-emerald-400/20 bg-emerald-500/[0.06] p-3">
+                <p className="text-xs font-medium text-zinc-400 mb-1">Goal</p>
                 <p className="text-xs text-zinc-300">{activeStage.goal}</p>
               </div>
               {activeStage.tips && activeStage.tips.length > 0 && (
                 <ul className="flex flex-col gap-2">
                   {activeStage.tips.map((tip, i) => (
                     <li key={tip} className="flex gap-2 text-xs text-zinc-400">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-white/[0.08] text-zinc-300 text-[10px] font-bold flex items-center justify-center">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-white/[0.08] text-zinc-300 text-[10px] font-semibold flex items-center justify-center">
                         {i + 1}
                       </span>
                       <span className="pt-0.5">{tip}</span>

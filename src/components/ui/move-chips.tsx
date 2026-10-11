@@ -24,10 +24,10 @@ export const MoveChips: React.FC<MoveChipsProps> = ({ moves, onMove, progressInd
           title={onMove ? `Apply ${move}` : undefined}
           className={cn(
             'text-xs px-1.5 py-0.5 font-mono rounded border transition-colors disabled:cursor-default',
-            state === 'idle' && 'bg-white/[0.04] border-white/10',
-            state === 'idle' && onMove && (tone === 'sky' ? 'hover:bg-sky-500/20' : 'hover:bg-emerald-500/20'),
-            state === 'done' && 'bg-sky-600/60 border-transparent text-white',
-            state === 'current' && 'bg-white border-transparent text-black',
+            state === 'idle' && 'bg-white/[0.04] border-zinc-800',
+            state === 'idle' && onMove && (tone === 'sky' ? 'hover:bg-accent/20' : 'hover:bg-emerald-500/20'),
+            state === 'done' && 'bg-accent/60 border-transparent text-zinc-50',
+            state === 'current' && 'bg-zinc-50 border-transparent text-zinc-950',
             state === 'todo' && 'bg-white/[0.05] border-transparent text-zinc-500',
           )}
         >

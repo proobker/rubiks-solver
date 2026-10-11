@@ -37,9 +37,9 @@ const ToolButton: React.FC<{
     aria-pressed={active}
     title={label}
     className={cn(
-      'inline-flex items-center gap-1.5 h-9 rounded-xl text-xs font-semibold transition-colors',
+      'inline-flex items-center gap-1.5 h-9 rounded-md text-xs font-semibold transition-colors',
       compact ? 'w-9 justify-center' : 'px-3',
-      active ? 'bg-sky-500 text-white' : 'text-zinc-300 hover:text-white hover:bg-white/10',
+      active ? 'bg-accent text-zinc-50' : 'text-zinc-300 hover:text-zinc-50 hover:bg-white/10',
     )}
   >
     {children}
@@ -74,7 +74,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({ reveal, onToggleRe
   return (
     <div ref={rootRef} className="relative">
       {menu === 'view' && (
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-40 p-1 rounded-2xl bg-panel/95 border border-white/10 shadow-2xl backdrop-blur animate-pop-in">
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-40 p-1 rounded-lg bg-panel/95 border border-zinc-800 shadow-lg shadow-black/40 backdrop-blur animate-pop-in">
           {PRESETS.map((p) => (
             <button
               key={p.name}
@@ -83,7 +83,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({ reveal, onToggleRe
                 onPreset(p.name);
                 setMenu(null);
               }}
-              className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:bg-white/10 hover:text-white"
+              className="w-full text-left px-3 py-2 rounded-md text-xs font-medium text-zinc-300 hover:bg-white/10 hover:text-zinc-50"
             >
               {p.label}
             </button>
@@ -91,7 +91,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({ reveal, onToggleRe
         </div>
       )}
       {menu === 'speed' && (
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-56 p-3 rounded-2xl bg-panel/95 border border-white/10 shadow-2xl backdrop-blur animate-pop-in">
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-56 p-3 rounded-lg bg-panel/95 border border-zinc-800 shadow-lg shadow-black/40 backdrop-blur animate-pop-in">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-zinc-400">Turn speed</span>
             <span className="font-mono text-xs text-zinc-100">{moveSpeed.toFixed(1)}×</span>
@@ -104,11 +104,11 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({ reveal, onToggleRe
             value={moveSpeed}
             onChange={(e) => setMoveSpeed(parseFloat(e.target.value))}
             aria-label="Turn speed"
-            className="w-full accent-sky-400"
+            className="w-full accent-accent"
           />
         </div>
       )}
-      <div className="flex items-center gap-1 p-1 rounded-2xl bg-panel/90 border border-white/10 shadow-xl backdrop-blur">
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-panel/90 border border-zinc-800 shadow-lg shadow-black/40 backdrop-blur">
         <ToolButton label="View" compact={compact} active={menu === 'view'} onClick={() => toggle('view')}>
           <Video size={16} />
         </ToolButton>

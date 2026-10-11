@@ -9,7 +9,7 @@ import { MovePanel } from '@/components/ui/move-button';
 import { MoveChips } from '@/components/ui/move-chips';
 
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <kbd className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-md bg-white/[0.08] border border-white/10 border-b-2 font-mono text-[11px] text-zinc-200">
+  <kbd className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-md bg-white/[0.08] border border-zinc-800 border-b-2 font-mono text-[11px] text-zinc-200">
     {children}
   </kbd>
 );
@@ -47,7 +47,7 @@ export const MovesPanel: React.FC = () => {
 
       {scrambleMoves.length > 0 && (
         <Card tone="inset" className="p-3 animate-float-up">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">Scramble</p>
+          <p className="text-xs font-medium text-zinc-400 mb-2">Scramble</p>
           <MoveChips moves={scrambleMoves} />
         </Card>
       )}

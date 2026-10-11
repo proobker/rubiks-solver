@@ -85,10 +85,10 @@ export const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
   if (!hasCases) {
     const item = items[0];
     return (
-      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 flex gap-3">
+      <div className="rounded-lg border border-zinc-800 bg-white/[0.035] p-3 flex gap-3">
         <CaseDiagram moves={item.moves} mode={diagramMode} size={64} />
         <div className="flex flex-col gap-2 min-w-0 flex-1">
-          <p className="text-sm font-bold text-zinc-100">{algorithm.name}</p>
+          <p className="text-sm font-semibold text-zinc-100">{algorithm.name}</p>
           <ItemDetail
             item={item}
             practicing={practicingKey === item.key}
@@ -105,7 +105,7 @@ export const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <p className="text-sm font-bold text-zinc-100">{algorithm.name}</p>
+        <p className="text-sm font-semibold text-zinc-100">{algorithm.name}</p>
         <p className="text-xs text-zinc-500">{algorithm.description}</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -119,12 +119,12 @@ export const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
               onClick={() => setExpandedKey(isOpen ? null : item.key)}
               aria-expanded={isOpen}
               className={cn(
-                'flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all duration-150 hover:-translate-y-0.5',
+                'flex items-center gap-2.5 p-2 rounded-md border text-left transition-all duration-150 hover:-translate-y-0.5',
                 isOpen
                   ? 'border-emerald-400/50 bg-emerald-500/10'
                   : practicingKey === item.key
-                    ? 'border-sky-400/40 bg-sky-500/10'
-                    : 'border-white/[0.07] bg-black/25 hover:border-white/20',
+                    ? 'border-accent/40 bg-accent/10'
+                    : 'border-zinc-800 bg-black/25 hover:border-zinc-800',
               )}
             >
               <CaseDiagram moves={item.moves} mode={diagramMode} size={44} />
@@ -141,10 +141,10 @@ export const AlgorithmCard: React.FC<AlgorithmCardProps> = ({
         })}
       </div>
       {expanded && (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.06] p-3 animate-float-up">
+        <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/[0.06] p-3 animate-float-up">
           <div className="flex items-center gap-3 mb-2">
             <CaseDiagram moves={expanded.moves} mode={diagramMode} size={72} />
-            <p className="text-sm font-bold text-zinc-100">{expanded.name}</p>
+            <p className="text-sm font-semibold text-zinc-100">{expanded.name}</p>
           </div>
           <ItemDetail
             item={expanded}

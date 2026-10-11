@@ -24,9 +24,9 @@ const KEY = 'rubiks-solver:solve-sessions';
 const HISTORY_SHOWN = 20;
 
 const StatTile: React.FC<{ label: string; value: number | null; highlight?: boolean }> = ({ label, value, highlight }) => (
-  <div className="rounded-xl bg-black/25 border border-white/[0.06] px-2 py-2.5 text-center">
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{label}</p>
-    <p className={cn('font-mono text-sm font-bold tabular-nums mt-0.5', highlight ? 'text-yellow-200' : 'text-zinc-100')}>
+  <div className="rounded-md bg-black/25 border border-zinc-800 px-2 py-2.5 text-center">
+    <p className="text-xs font-medium text-zinc-400">{label}</p>
+    <p className={cn('font-mono text-sm font-semibold tabular-nums mt-0.5', highlight ? 'text-accent-soft' : 'text-zinc-100')}>
       {value !== null ? formatTime(value) : '—'}
     </p>
   </div>
@@ -114,14 +114,14 @@ export const TimerPanel: React.FC = () => {
       <Card
         className={cn(
           'text-center py-6 transition-colors duration-300',
-          timerState === 'running' && 'border-yellow-300/40 bg-yellow-400/[0.06]',
+          timerState === 'running' && 'border-accent/40 bg-accent/[0.06]',
           timerState === 'solved' && 'border-emerald-400/40 bg-emerald-500/[0.08]',
         )}
       >
         <p
           className={cn(
-            'font-mono text-6xl font-bold tabular-nums tracking-tight',
-            timerState === 'running' ? 'text-yellow-200' : timerState === 'solved' ? 'text-emerald-300' : 'text-zinc-300',
+            'font-mono text-6xl font-semibold tabular-nums tracking-tight',
+            timerState === 'running' ? 'text-accent-soft' : timerState === 'solved' ? 'text-emerald-300' : 'text-zinc-300',
           )}
         >
           {formatTime(elapsedMs)}
@@ -154,7 +154,7 @@ export const TimerPanel: React.FC = () => {
             <span className="flex items-center gap-1 animate-pop-in">
               <Button
                 size="xs"
-                accent="red"
+                accent="danger"
                 onClick={() => {
                   setSessions([]);
                   setConfirmClear(false);
@@ -186,7 +186,7 @@ export const TimerPanel: React.FC = () => {
                   <span
                     className={cn(
                       'font-mono font-semibold tabular-nums flex-1',
-                      x.timeMs === bestTime ? 'text-yellow-200' : 'text-zinc-100',
+                      x.timeMs === bestTime ? 'text-accent-soft' : 'text-zinc-100',
                     )}
                   >
                     {formatTime(x.timeMs)}

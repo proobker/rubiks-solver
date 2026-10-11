@@ -17,16 +17,14 @@ import { MobileSheet } from './mobile-sheet';
 
 const Logo: React.FC<{ small?: boolean }> = ({ small }) => (
   <div className="flex items-center gap-2.5">
-    <div className={`grid grid-cols-3 gap-[2px] p-[3px] rounded-lg bg-black/60 ${small ? 'w-6 h-6' : 'w-8 h-8'}`}>
+    <div className={`grid grid-cols-3 gap-[2px] p-[3px] rounded-md bg-zinc-900 border border-zinc-800 ${small ? 'w-6 h-6' : 'w-7 h-7'}`}>
       {['bg-cube-red', 'bg-cube-white', 'bg-cube-blue', 'bg-cube-yellow', 'bg-cube-green', 'bg-cube-orange', 'bg-cube-blue', 'bg-cube-red', 'bg-cube-yellow'].map(
         (c, i) => (
-          <span key={i} className={`${c} rounded-[2px]`} />
+          <span key={i} className={`${c} rounded-[1px]`} />
         ),
       )}
     </div>
-    <h1 className={`font-bold tracking-tight text-white ${small ? 'text-base' : 'text-xl'}`}>
-      Rubik's <span className="brand-gradient bg-clip-text text-transparent">Solver</span>
-    </h1>
+    <h1 className={`font-serif font-medium tracking-tight text-zinc-50 ${small ? 'text-base' : 'text-xl'}`}>Rubik's Solver</h1>
   </div>
 );
 
@@ -109,14 +107,14 @@ export const App: React.FC = () => {
 
   const tabOptions = TABS.map((t) => {
     const Icon = t.icon;
-    return { value: t.id, label: t.label, icon: <Icon size={14} />, accent: t.accent };
+    return { value: t.id, label: t.label, icon: <Icon size={14} /> };
   });
 
   return (
-    <div className="h-dvh flex flex-col md:flex-row text-white overflow-hidden">
+    <div className="h-dvh flex flex-col md:flex-row text-zinc-50 overflow-hidden">
       {isDesktop && (
-        <aside className="flex w-[360px] xl:w-[400px] flex-col h-full shrink-0 bg-panel border-r border-white/[0.06]">
-          <div className="p-4 pb-3 border-b border-white/[0.06] flex flex-col gap-4">
+        <aside className="flex w-[360px] xl:w-[400px] flex-col h-full shrink-0 bg-panel border-r border-zinc-800">
+          <div className="p-4 border-b border-zinc-800 flex flex-col gap-4">
             <Logo />
             <Segmented options={tabOptions} value={activeTab} onChange={setActiveTab} ariaLabel="Sections" />
           </div>
@@ -126,7 +124,7 @@ export const App: React.FC = () => {
 
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         {!isDesktop && (
-          <header className="shrink-0 px-4 py-3 bg-panel/80 border-b border-white/[0.06]">
+          <header className="shrink-0 px-4 py-3 bg-panel border-b border-zinc-800">
             <Logo small />
           </header>
         )}
@@ -137,17 +135,16 @@ export const App: React.FC = () => {
             if (!orbitHintSeen) setOrbitHintSeen(true);
           }}
         >
-          <div className="absolute inset-0 cube-grid pointer-events-none" />
           {solved && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-emerald-500 text-white pl-3 pr-4 py-2 rounded-2xl font-bold shadow-lg shadow-emerald-900/40 animate-pop-in">
-              <span className="text-lg leading-none">🎉</span> Solved!
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-zinc-950 text-zinc-50 text-sm pl-3 pr-4 py-2 rounded-md border border-zinc-800 font-medium animate-pop-in">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" /> Solved
             </div>
           )}
           {celebrateKey > 0 && (
             <Celebration key={celebrateKey} seed={celebrateKey} className="pointer-events-none absolute left-1/2 top-10 z-20" />
           )}
           {!orbitHintSeen && (
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-black/60 text-zinc-200 text-xs px-3 py-2 rounded-xl border border-white/10 backdrop-blur-sm animate-float-up max-md:hidden">
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-zinc-950/80 text-zinc-300 text-xs px-3 py-2 rounded-md border border-zinc-800 backdrop-blur-sm animate-float-up max-md:hidden">
               <Hand size={14} /> Drag to orbit the cube
             </div>
           )}

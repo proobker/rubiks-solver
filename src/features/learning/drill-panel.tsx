@@ -126,11 +126,11 @@ export const DrillPanel: React.FC<DrillPanelProps> = ({
   const accuracy = session.answered > 0 ? Math.round((session.correct / session.answered) * 100) : null;
 
   return (
-    <div className="relative rounded-2xl border border-violet-400/40 bg-violet-500/[0.07] p-4 flex flex-col gap-4 animate-pop-in">
+    <div className="relative rounded-lg border border-accent/40 bg-accent/[0.07] p-4 flex flex-col gap-4 animate-pop-in">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Drill</p>
-          <p className="text-sm font-bold text-white truncate">{stageName}</p>
+          <p className="text-xs font-medium text-zinc-400">Drill</p>
+          <p className="text-sm font-semibold text-zinc-50 truncate">{stageName}</p>
         </div>
         <div className="flex items-center gap-1.5">
           <Badge tone="amber">
@@ -165,13 +165,13 @@ export const DrillPanel: React.FC<DrillPanelProps> = ({
         <div className="flex flex-col gap-3">
           <div
             className={cn(
-              'flex gap-3 items-center rounded-xl p-3 border animate-pop-in',
+              'flex gap-3 items-center rounded-md p-3 border animate-pop-in',
               recognized ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-amber-400/40 bg-amber-500/10',
             )}
           >
             <CaseDiagram moves={item.moves} mode={diagramMode} size={64} />
             <div className="flex flex-col gap-1 min-w-0">
-              <p className={cn('text-sm font-bold', recognized ? 'text-emerald-300' : 'text-amber-200')}>
+              <p className={cn('text-sm font-semibold', recognized ? 'text-emerald-300' : 'text-amber-200')}>
                 {recognized ? `✓ ${item.name}` : `It's ${item.name}`}
               </p>
               {item.recognition && <p className="text-[11px] text-zinc-300">Look for: {item.recognition}</p>}
@@ -188,7 +188,7 @@ export const DrillPanel: React.FC<DrillPanelProps> = ({
                 {timing ? ' ⏱ Timing…' : ' The timer starts on your first move.'}
               </p>
               {assisted ? (
-                <code className="text-sm font-mono font-semibold bg-black/40 px-3 py-2 rounded-xl text-amber-300 border border-white/10">
+                <code className="text-sm font-mono font-semibold bg-black/40 px-3 py-2 rounded-md text-amber-300 border border-zinc-800">
                   {item.notation}
                 </code>
               ) : (
@@ -202,7 +202,7 @@ export const DrillPanel: React.FC<DrillPanelProps> = ({
           {phase === 'done' && (
             <div className="relative text-center py-2 animate-pop-in">
               {newBest && <Celebration seed={session.answered} />}
-              <p className="font-mono text-3xl font-bold text-emerald-300 tabular-nums">
+              <p className="font-mono text-3xl font-semibold text-emerald-300 tabular-nums">
                 {elapsedMs !== null ? formatSeconds(elapsedMs) : 'Solved'}
               </p>
               <p className="text-xs text-zinc-400 mt-1">
@@ -215,7 +215,7 @@ export const DrillPanel: React.FC<DrillPanelProps> = ({
             <Button variant="secondary" icon={<RotateCcw size={14} />} onClick={handleRetry}>
               Retry
             </Button>
-            <Button accent="violet" onClick={handleNext}>
+            <Button onClick={handleNext}>
               Next case <ArrowRight size={14} />
             </Button>
           </div>

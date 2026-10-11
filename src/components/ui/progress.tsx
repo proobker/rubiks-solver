@@ -10,14 +10,14 @@ interface ProgressProps {
   className?: string;
 }
 
-export const Progress: React.FC<ProgressProps> = ({ value, max, accent = 'green', className }) => {
+export const Progress: React.FC<ProgressProps> = ({ value, max, accent = 'accent', className }) => {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div
       role="progressbar"
       aria-valuenow={value}
       aria-valuemax={max}
-      className={cn('h-2 rounded-full bg-white/10 overflow-hidden', className)}
+      className={cn('h-1.5 rounded-full bg-zinc-800 overflow-hidden', className)}
     >
       <div
         className={cn('h-full rounded-full transition-all duration-500 ease-out', ACCENT_BAR[accent])}

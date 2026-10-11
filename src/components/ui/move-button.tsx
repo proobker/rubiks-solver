@@ -10,20 +10,14 @@ interface MoveButtonProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const FACE_COLORS: Record<FaceName, string> = {
-  U: 'bg-gradient-to-br from-white via-slate-100 to-slate-300 text-zinc-900 border-black/10',
-  D: 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 text-zinc-900 border-black/10',
-  F: 'bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white border-black/10',
-  B: 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white border-black/10',
-  L: 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 text-white border-black/10',
-  R: 'bg-gradient-to-br from-red-400 via-red-500 to-red-600 text-white border-black/10',
+const FACE_SWATCH: Partial<Record<string, string>> = {
+  U: 'bg-cube-white',
+  D: 'bg-cube-yellow',
+  F: 'bg-cube-green',
+  B: 'bg-cube-blue',
+  L: 'bg-cube-orange',
+  R: 'bg-cube-red',
 };
-
-const NEUTRAL_COLORS = 'bg-gradient-to-br from-zinc-600 to-zinc-800 text-zinc-50 border-white/10';
-
-function colorsFor(move: MoveString): string {
-  return FACE_COLORS[move[0] as FaceName] ?? NEUTRAL_COLORS;
-}
 
 const SIZE_CLASSES = {
   sm: 'w-9 h-9 text-xs',
@@ -38,13 +32,14 @@ export const MoveButton: React.FC<MoveButtonProps> = ({ move, onClick, disabled 
     disabled={disabled}
     aria-label={`Move ${move}`}
     className={cn(
-      'keycap rounded-xl font-bold font-mono border hover:brightness-110',
+      'relative overflow-hidden rounded-md font-medium font-mono border border-zinc-800 bg-zinc-900 text-zinc-50 transition-colors',
+      'hover:bg-zinc-800 hover:border-zinc-700 active:bg-zinc-700',
       'disabled:opacity-50 disabled:cursor-not-allowed',
-      colorsFor(move),
       SIZE_CLASSES[size],
       className,
     )}
   >
+    {FACE_SWATCH[move[0]] && <span aria-hidden className={cn('absolute inset-x-0 top-0 h-[3px]', FACE_SWATCH[move[0]])} />}
     {move}
   </button>
 );
@@ -60,7 +55,7 @@ const ROTATION_NAMES: RotationName[] = ['x', 'y', 'z'];
 const SLICE_NAMES: SliceName[] = ['M', 'E', 'S'];
 
 const GroupLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">{children}</p>
+  <p className="text-xs font-medium text-zinc-400 mb-2">{children}</p>
 );
 
 export const MovePanel: React.FC<MovePanelProps> = ({ onMove, disabled = false, showExtras = true }) => (

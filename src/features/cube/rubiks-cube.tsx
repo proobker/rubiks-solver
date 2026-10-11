@@ -178,7 +178,7 @@ const PieceMesh: React.FC<PieceMeshProps> = ({ piece, highlighted, highlightLabe
           center
           zIndexRange={[-1, 0]}
         >
-          <div className="bg-sky-600 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold whitespace-nowrap pointer-events-none">
+          <div className="bg-accent text-zinc-50 text-[10px] px-2 py-0.5 rounded-md font-semibold whitespace-nowrap pointer-events-none">
             {highlightLabel}
           </div>
         </Html>
@@ -309,7 +309,7 @@ export const RubiksCube: React.FC<RubiksCubeProps> = ({
 
       {isAnimating && currentAnimation && (
         <Html center position={[0, -2.2, 0]} zIndexRange={[-1, 0]}>
-          <div className="bg-black/60 text-white text-xl font-mono px-4 py-2 rounded-lg border border-white/15">
+          <div className="bg-black/60 text-zinc-50 text-xl font-mono px-4 py-2 rounded-lg border border-zinc-800">
             {currentAnimation.move}
           </div>
         </Html>

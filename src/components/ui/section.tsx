@@ -16,7 +16,7 @@ interface SectionProps {
 export const Section: React.FC<SectionProps> = ({ id, title, icon, defaultOpen = true, aside, children, className }) => {
   const [open, setOpen] = useLocalStorage<boolean>(`rubiks-solver:section:${id}`, defaultOpen);
   return (
-    <section className={cn('border-t border-white/[0.06] pt-3', className)}>
+    <section className={cn('border-t border-zinc-800 pt-3', className)}>
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -25,7 +25,7 @@ export const Section: React.FC<SectionProps> = ({ id, title, icon, defaultOpen =
           className="flex-1 flex items-center gap-2 py-1 text-left rounded-md group"
         >
           {icon && <span className="text-zinc-500 group-hover:text-zinc-300 transition-colors">{icon}</span>}
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-200 transition-colors">
+          <span className="text-[13px] font-medium text-zinc-200 group-hover:text-zinc-50 transition-colors">
             {title}
           </span>
           <ChevronDown
