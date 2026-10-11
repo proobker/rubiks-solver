@@ -268,7 +268,33 @@ interface RubiksCubeProps {
   cameraApiRef?: React.MutableRefObject<CameraApi | null>;
 }
 
-export const RubiksCube: React.FC<RubiksCubeProps> = ({
+function detectWebGL(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
+const WebGLUnsupported: React.FC = () => (
+  <div className="h-full w-full flex items-center justify-center p-6">
+    <div className="max-w-sm text-center">
+      <p className="font-serif text-lg text-zinc-50">3D view unavailable</p>
+      <p className="mt-2 text-sm text-zinc-400">
+        Your browser or device can't run WebGL. Try a recent version of Chrome, Firefox, Safari or Edge,
+        and make sure hardware acceleration is turned on.
+      </p>
+    </div>
+  </div>
+);
+
+export const RubiksCube: React.FC<RubiksCubeProps> = (props) => {
+  const [supported] = useState(detectWebGL);
+  return supported ? <CubeCanvas {...props} /> : <WebGLUnsupported />;
+};
+
+const CubeCanvas: React.FC<RubiksCubeProps> = ({
   highlights,
   reveal,
   cameraApiRef,

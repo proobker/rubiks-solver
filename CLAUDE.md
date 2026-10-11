@@ -9,9 +9,10 @@ For the deep technical reference (dual representation, animation pipeline, solve
 - `npm run dev` — start Vite dev server
 - `npm run build` — `tsc -b && vite build` (type-check + bundle)
 - `npm run lint` — `oxlint`
+- `npm test` — `vitest run` (engine, grid/piece sync, solver, learning content, timer stats)
 - `npm run preview` — preview the production build
 
-Run `npm run build` and `npm run lint` after any change. There is **no test runner** configured.
+Run `npm test`, `npm run build` and `npm run lint` after any change. CI runs all three before deploying.
 
 ## Architecture
 
@@ -38,7 +39,7 @@ For the animation to be seamless (no snap on rest), the animated slice rotation 
 - `src/features/engine/moves.ts` — a grid engine. `applyFaceTurn` implements a prime move (`direction: -1`) as **three clockwise turns** so that `'` is a true inverse (`X` then `X'` returns to solved). Keep this property; it is load-bearing for the solver and the piece model matching the grid.
 - `src/shared/types/cube.ts` — `FACE_TO_AXIS`, `FACE_TO_POSITION`, `COLOR_TO_HEX`, `SOLVED_STATE`, `MoveString`, `MoveDirection` (`1 | -1 | 2`), `MOVE_BASES`/`moveSpec`. `MoveString` covers faces `U D F B L R`, wide `u d f b l r`, slices `M E S` and rotations `x y z`; a `MoveSpec` is `{ axis, layers, direction }`. `ALL_MOVES` stays the 18 outer face turns.
 - Non-face moves are applied to the grid **geometrically** (`applySpecGeometrically` in `moves.ts`, via `faceletPosition`/`faceletCell` + `rotateVec` from `pieces.ts`), so they match the piece model by construction. `parseMoveString` is case-sensitive (lowercase = wide).
-- Scramble generator (plain): `src/features/engine/scramble.ts`. Real WCA scrambles use the **`cubing` npm library** via `src/features/engine/wca-scramble.ts` (`generateWCAScramble()` → `randomScrambleForEvent('333')`), exposed through the `useWCAScramble()` hook in `src/features/engine/use-wca-scramble.ts` (it prefers a preloaded value from `preloadWCAScramble()`). `cubing` is GPL-licensed and code-splits into lazy chunks; only import it through `wca-scramble.ts`.
+- Scramble generator (plain): `src/features/engine/scramble.ts`. Real WCA scrambles use the **`cubing` npm library** via `src/features/engine/wca-scramble.ts` (`generateWCAScramble()` → `randomScrambleForEvent('333')`), exposed through the `useWCAScramble()` hook in `src/features/engine/use-wca-scramble.ts` (it prefers a preloaded value from `preloadWCAScramble()`). `cubing` is licensed `MPL-2.0 OR GPL-3.0-or-later` (compatible with this MIT project under MPL) and code-splits into lazy chunks; only import it through `wca-scramble.ts`.
 
 ## Solver
 
@@ -69,6 +70,13 @@ See `docs/architecture.md` §8 for details.
 - `cube-store.ts` uses zustand `persist` (key `rubiks-solver`, `version: 1`): `partialize` keeps `moveSpeed`, `state`, `pieces`, `scrambleMoves` so the cube survives reloads. `history`, the animation queue and `practiceStart` are not persisted. `merge` validates `state`/`pieces` together (falls back to solved if either is malformed) and recomputes `solved`.
 - Completed learning stages persist via `src/lib/use-local-storage.ts` under the key `rubiks-solver:completed-stages` (a `string[]` of stage ids). Drill stats persist under `rubiks-solver:case-stats`.
 - Reset progress clears both keys and is surfaced in the Learn tab.
+- The root `ErrorBoundary` (`src/components/error-boundary.tsx`) offers Reload and "Reset app data" (clears every `rubiks-solver*` key), so corrupt saved data can't trap users.
+
+## Production
+
+- Error reporting: `src/lib/error-reporting.ts` lazy-loads `@sentry/react` only when `VITE_SENTRY_DSN` is set at build time (a GitHub Actions secret); without it no Sentry code ships. Use `reportError()` rather than importing Sentry directly.
+- `RubiksCube` checks for WebGL and renders a fallback message instead of crashing when it's unavailable.
+- The PWA precache skips cubing's non-3x3 event chunks (`globIgnores` in `vite.config.ts`); if you add other WCA events, remove the matching patterns.
 
 ## Data flow / entry points
 
@@ -87,5 +95,5 @@ See `docs/architecture.md` §8 for details.
 ## Conventions
 
 - Path alias `@/` → `src/`.
-- No test framework; verify with `npm run build` + `npm run lint`.
+- Tests are Vitest, colocated as `src/**/*.test.ts`. The grid ↔ piece-model sync tests in `engine.test.ts` guard the core invariant; extend them when adding move types.
 - Comments are avoided unless they explain a non-obvious invariant (see the rotation-convention note above); keep code self-documenting otherwise.

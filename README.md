@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173/rubiks-solver/`).
+Open the URL Vite prints (usually `http://localhost:5173/`).
 
 ## Scripts
 
@@ -47,9 +47,12 @@ Open the URL Vite prints (usually `http://localhost:5173/rubiks-solver/`).
 | `npm run dev` | Start the Vite dev server with HMR |
 | `npm run build` | Type-check (`tsc -b`) then production bundle (`vite build`) |
 | `npm run lint` | Lint with oxlint |
+| `npm test` | Run the Vitest suite |
 | `npm run preview` | Preview the production build locally |
 
-There is **no test runner** configured; verify changes with `npm run build` and `npm run lint`.
+Verify changes with `npm test`, `npm run build` and `npm run lint`; CI runs all three before deploying.
+
+Optional error reporting: set `VITE_SENTRY_DSN` (a repository secret in CI) to send runtime errors to Sentry. Without it, no Sentry code is bundled.
 
 ## Usage
 

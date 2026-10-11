@@ -220,7 +220,7 @@ The Solve tab calls `solveCube(state)`; results render as a series of `MoveButto
 
 ## 7. WCA scrambles (`src/features/engine/`)
 
-`cubing` is a GPL-licensed library that code-splits into lazy chunks. To keep the initial bundle lean and scrambles instant:
+`cubing` (licensed `MPL-2.0 OR GPL-3.0-or-later`) code-splits into lazy chunks. To keep the initial bundle lean and scrambles instant:
 
 - `wca-scramble.ts` is the **only** module allowed to import `cubing/scramble`. `generateWCAScramble()` → `randomScrambleForEvent('333')`, parsed to `MoveString[]`.
 - `preloadWCAScramble()` pre-generates one scramble into a module-level `cached` variable.
@@ -277,8 +277,8 @@ Auto-timing: the app considers a "solve" active when `history.length > 0 && !sol
 
 ## 10. PWA & deployment
 
-- **PWA**: `vite-plugin-pwa` in `vite.config.ts` with `registerType: 'autoUpdate'`. The site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); the manifest `scope`, `start_url`, and `workbox.navigateFallback` are all pinned to that base. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`).
-- **Deploy**: `.github/workflows/deploy.yml` builds on `main` (`npm ci` + `npm run build`) and deploys `dist/` to GitHub Pages via the standard `actions/deploy-pages` flow.
+- **PWA**: `vite-plugin-pwa` in `vite.config.ts` with `registerType: 'autoUpdate'`. The site base is `/` (served at the root of `https://rubiks.rabidahal.com.np`, GitHub Pages); the manifest `scope`, `start_url`, and `workbox.navigateFallback` are all pinned to that base. Workbox precaches JS/CSS/HTML/images/`woff2` fonts but `globIgnores` cubing's non-3x3 event chunks (including the ~670 KB twips WASM), which are never loaded. PWA icons live in `/public` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`).
+- **Deploy**: `.github/workflows/deploy.yml` builds on `main` with Node 22 (`npm ci`, `npm run lint`, `npm test`, `npm run build`, with `VITE_SENTRY_DSN` from repository secrets) and deploys `dist/` to GitHub Pages via the standard `actions/deploy-pages` flow.
 - **Code splitting**: `vite.config.ts` uses a `manualChunks` rule (under `build.rolldownOptions.output`) that returns a single `three` chunk for ids containing `three`, `@react-three`, or `@react-spring/three`. `optimizeDeps.exclude` keeps `cubing`/`cubing/scramble` out of dev pre-bundling, and `cubing` splits into its own lazy chunks (see §7).
 
 ---
@@ -292,8 +292,8 @@ These are the load-bearing invariant rules to preserve when editing:
 3. **`ANGLE_MAP` (renderer) must equal `angleFor * sign(axis)` (piece model)** — otherwise animation snaps (§4.2).
 4. **Prime is three clockwise turns** — keeps `X X'` an identity and the grid/piece models consistent (§3.1).
 5. **`rubik-solver` lives only in the web worker** — never import it on the main thread (§6.1).
-6. **`cubing` is only imported through `wca-scramble.ts`** — it is GPL and code-splits (§7).
+6. **`cubing` is only imported through `wca-scramble.ts`** — it code-splits per WCA event (§7).
 7. **Learning logic must be orientation-independent** — compare stickers against live centers (`facelets.ts`), never against fixed colors per face (§8.2).
-7. **Keep the x-ray as `RevealPanels`**, not semi-transparent cubies (§5.4).
-8. **Highlights are keyed by piece id, not slot** — highlighted pieces must follow the physical piece as it moves (§8.3).
-9. **The solver is single-in-flight with a 20s timeout** — `solveCube` rejects while a request is pending and never lets the worker hang indefinitely (§6.2).
+8. **Keep the x-ray as `RevealPanels`**, not semi-transparent cubies (§5.4).
+9. **Highlights are keyed by piece id, not slot** — highlighted pieces must follow the physical piece as it moves (§8.3).
+10. **The solver is single-in-flight with a 20s timeout** — `solveCube` rejects while a request is pending and never lets the worker hang indefinitely (§6.2).

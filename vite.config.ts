@@ -1,8 +1,9 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
+import pkg from './package.json' with { type: 'json' }
 
 export default defineConfig({
   plugins: [
@@ -27,12 +28,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,html,css,svg,png}'],
+        globPatterns: ['**/*.{js,html,css,svg,png,woff2}'],
+        // cubing.js code-splits every WCA event; only the 3x3 scramble path is ever loaded.
+        globIgnores: [
+          '**/puzzles-dynamic-{4x4x4,megaminx,side-events,unofficial}-*.js',
+          '**/search-dynamic-{sgs-*,solve-4x4x4,solve-fto,solve-kilominx,solve-master_tetraminx}-*.js',
+          '**/twips*.js',
+        ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/assets\/.*/],
       },
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -42,7 +52,12 @@ export default defineConfig({
     exclude: ['cubing', 'cubing/scramble'],
   },
   base: '/',
+  test: {
+    include: ['src/**/*.test.ts'],
+  },
   build: {
+    // three.js + drei is a single ~1.1 MB chunk by design; it is cached by the service worker.
+    chunkSizeWarningLimit: 1200,
     rolldownOptions: {
       output: {
         manualChunks: (id: string) => {
